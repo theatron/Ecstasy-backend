@@ -1,0 +1,24 @@
+{
+  "name": "ecstasy-backend",
+  "version": "1.0.0",
+  "description": "In some days there will be a proper instruction how to implement the backend for mobile platform",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theatron/Ecstasy-backend.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/theatron/Ecstasy-backend/issues"
+  },
+  "homepage": "https://github.com/theatron/Ecstasy-backend#readme",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "firebase-admin": "^9.1.1"
+  }
+}
