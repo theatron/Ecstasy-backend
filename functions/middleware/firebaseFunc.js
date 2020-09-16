@@ -4,7 +4,8 @@ var serviceAccount = require("../path/Ecstasy/theatronfinal-firebase-adminsdk-b3
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: "https://theatronfinal.firebaseio.com"
+    databaseURL: "https://theatronfinal.firebaseio.com",
+    storageBucket:"theatronfinal.appspot.com"
 });
 
 var db = admin.database();

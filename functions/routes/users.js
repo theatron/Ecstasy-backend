@@ -1,8 +1,11 @@
+const firebase = require('../middleware/firebaseFunc.js');
 const express = require('express');
 const router = express.Router();
 const app = express();
+const multer = require('multer');
+// const bucket = firebase.admin.storage('/profileImages');
 const auth = require('../middleware/auth');
-const firebase = require('../middleware/firebaseFunc.js');
+
 
 //Routes
 
@@ -28,12 +31,23 @@ router.post('/profile', auth ,  async (req,res)=>{
     try{
       const user = req.user;
       
-      console.log(user.toJSON());
-  }catch(e){
+      res.status(200).json(user);
+
+    }catch(e){
       res.status(401).send();
   }
 
 });
+
+// multer
+
+// const upload = multer({dest: bucket});
+
+// //Profile picture
+// router.post('/profile/me', auth ,upload.single('avatar') ,async (req,res)=>{
+//   res.status(200).send();
+
+// });
 
 
 //Exports
