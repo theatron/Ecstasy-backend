@@ -5,11 +5,12 @@ const firebase = require('./firebaseFunc.js');
 
 const auth = async (req, res, next) => {
     try {
-        const token = await firebase.admin.auth().verifyIdToken(req.header.AccessToken);
-        const uid = await token.uid;
-        const user = firebase.admin.auth().getUser(uid)
+        console.log(req.header);
+        const token = await req.header('Authorization').replace('Bearer ', '');
+        const decodedToken = await firebase.admin.auth().verifyIdToken(token.toString());
+        const uid =  decodedToken.uid;
+        const user = await firebase.admin.auth().getUser(uid);
 
-        req.user = user;
 
         if (!user) {
             throw new Error('User not found');

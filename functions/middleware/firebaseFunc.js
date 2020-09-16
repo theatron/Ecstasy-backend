@@ -1,6 +1,6 @@
 var admin = require("firebase-admin");
 
-var serviceAccount = require("../path/Ecstasy/theatronfinal-firebase-adminsdk-b3s0e-39afec9164.json");
+var serviceAccount = require("../path/Ecstasy/service-account-key.json");
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
