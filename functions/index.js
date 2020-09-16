@@ -3,7 +3,7 @@ const app = express();
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 //Routes setup
-const pages = require('../routes/users');
+const users = require('./routes/users');
 
 //    *******************
 //    M I D D L E W A R E
@@ -23,8 +23,8 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // parse application/json
 app.use(bodyParser.json());
 
-//Setting Pages Router
-app.use('/',pages);
+//Setting users Router
+app.use('/',users);
 
 
 
