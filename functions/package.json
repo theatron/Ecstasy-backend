@@ -21,9 +21,8 @@
     "fast-crc32c": "^2.0.0",
     "firebase-admin": "^9.2.0",
     "firebase-functions": "^3.11.0",
-    "formidable": "^1.2.2",
-    "multer": "^1.4.2",
-    "python": "0.0.4"
+    "fluent-ffmpeg": "^2.1.2",
+    "formidable": "^1.2.2"
   },
   "devDependencies": {
     "eslint": "^5.12.0",
