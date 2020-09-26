@@ -1,17 +1,14 @@
 var admin = require("firebase-admin");
 const firebase = require('../middleware/firebaseFunc');
+const functions = require('firebase-functions');
 const express = require('express');
 const router = new express.Router();
-const formidable = require('formidable');
 var bucket = firebase.admin.storage().bucket();
 const fs = require('fs');
 const auth = require('../middleware/auth');
-const form = formidable({multiples: true});
+const os = require('os');
+const path = require('path');
 const ffmpeg = require('fluent-ffmpeg');
-
-
-
-
 
 
 //Routes
@@ -34,20 +31,101 @@ router.post('/profile', auth ,  async (req,res)=>{
 });
 
 
+  router.post('/profile/upload', auth , (req,res)=>{
+    // req.get('Content-Type');
 
-//Video Uploading Middleware
-//FFmpeg file path
+    // if (!content-type.startsWith('video/mp4')) {
+    //   console.log('This is not an audio.');
+    //   return null;
+    // }
+    const userName = req.user.displayName;
 
-router.post('/profile/upload',(req,res)=>{
-  ffmpeg('./routes/tmp.mp4')
-  .videoCodec('libx265')
-  .outputOptions([
-    '-preset veryfast',
-    '-crf 28'
-  ])
-  .save('./routes/final.mp4');
+    const Busboy = require('busboy');
+    
+    const busboy = new Busboy({headers: req.headers});
+    const tmpdir = os.tmpdir();
+
+    // This object will accumulate all the fields, keyed by their name
+    const fields = {};
+
+    // This object will accumulate all the uploaded files, keyed by their name.
+    const uploads = {};
+
+    // This code will process each non-file field in the form.
+    busboy.on('field', (fieldname, val) => {
+      // TODO(developer): Process submitted field values here
+      console.log(`Processed field ${fieldname}: ${val}.`);
+      fields.fieldname = val;
+    });
+
+
+    // This code will process each file uploaded.
+    busboy.on('file', (fieldname, file, filename) => {
+      var metadata = {
+        contentType: 'video/mp4',
+      }
+
+
+      console.log(`Processed file ${filename}`);
+      const filepath = path.join(tmpdir, filename);
+      const outputFilePath = path.join(tmpdir,'op'+filename);
+      uploads.fieldname = filepath;
+      uploads.file = outputFilePath;
+      
+      
+      const writeStream = fs.createWriteStream(filepath);
+      file.pipe(writeStream);
+      
+
+        ffmpeg(filepath)
+        .videoCodec('libx265')
+        .outputOptions([
+          '-preset veryfast',
+          '-crf 28'
+        ]).save(outputFilePath);
+
+        
+        
+    
+          bucket.upload(outputFilePath, {
+            destination: 'videos/'+userName+Date.now(),
+            metadata: metadata
   
+          }).then(() => {
+            console.log('done');
+          }).catch(err => {
+            console.error('ERROR:', err.message);
+          });
+        });
+      
+        
+
+      res.send('success');
+
+    // Triggered once all uploaded files are processed by Busboy.
+    // We still need to wait for the disk writes (saves) to complete.
+    busboy.on('finish', async () => {
+      console.log('upload done');
+    });
+
+    busboy.end(req.rawBody);
+    console.log('File uploaded');
+
+    
+    
+     
+     
+      //Use Compression with ffmpeg binary
+  // var exec = require('child_process').exec;
+  // var cmd = 'ffmpeg -i '+filePath+' -vcodec libx265 -preset veryfast -crf 28 veryfast.mp4';
+
+  // exec(cmd, function(error, stdout, stderr) {
+  // console.log('success');
+  // })
+
 });
+
+
   
 
   

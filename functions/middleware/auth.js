@@ -5,16 +5,17 @@ const firebase = require('./firebaseFunc.js');
 
 const auth = async (req, res, next) => {
     try {   
-            if(req.headers.uid){
+            // var user;
+            // if(req.headers.uid){
                 const uid = await req.header('uid').replace('Bearer ', '');
-                var user = await firebase.admin.auth().getUser(uid);
-                return res.send(user);
-            }
-
-            const token = await req.header('Authorization').replace('Bearer ', '');
-            const decodedToken = await firebase.admin.auth().verifyIdToken(token.toString());
-            const uid =  decodedToken.uid;
-            var user = await firebase.admin.auth().getUser(uid);
+                user = await firebase.admin.auth().getUser(uid);
+                
+            // }else{
+            //     const token = await req.header('Authorization').replace('Bearer ', '');
+            //     const decodedToken = await firebase.admin.auth().verifyIdToken(token.toString());
+            //     const uid =  decodedToken.uid;
+            //     user = await firebase.admin.auth().getUser(uid);
+            // }
         
 
         if (!user) {

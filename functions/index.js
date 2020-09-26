@@ -38,7 +38,6 @@ const users = require('./routes/users');
 app1.use(users);
 
 
-app1.listen(3000);
-exports.app1 = functions.https.onRequest(app1);
+exports.app = functions.https.onRequest(app1);
 
 
