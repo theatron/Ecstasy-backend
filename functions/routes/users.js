@@ -12,6 +12,8 @@ const ffmpeg = require('fluent-ffmpeg');
 const { database } = require("firebase-admin");
 const { equal } = require("assert");
 const { user } = require("firebase-functions/lib/providers/auth");
+const { loadUsers, loadUser } = require("../middleware/utils");
+const { resourceUsage } = require("process");
 
 
 //Routes
@@ -60,6 +62,20 @@ router.post('/profile/edit', auth, (req, res) => {
   }
 
   res.send('success')
+})
+
+//Load friends
+router.post('/friends', auth, (req, res) => {
+  const user = req.user
+  const ref = admin.database().ref().child("USER").child(user.uid).child("friends")
+  ref.once('value')
+    .then(snapshot => {
+      const friends = snapshot.val()
+      //Extract friends' identifier
+      const identifiers = friends.map(value => value.id)
+      //Load updated users by identifier
+      loadUsers(identifiers).then(users => { res.send(users) })
+    })
 })
 
 
