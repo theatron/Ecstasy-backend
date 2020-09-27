@@ -66,7 +66,7 @@ router.post('/profile/edit', auth, (req, res) => {
 })
 
 //Load friends
-router.post('/friends', auth, (req, res) => {
+router.post('/profile/friends', auth, (req, res) => {
   const user = req.user
   const ref = admin.database().ref().child("USER").child(user.uid).child("friends")
   ref.once('value')
