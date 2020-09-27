@@ -14,6 +14,7 @@ const { equal } = require("assert");
 const { user } = require("firebase-functions/lib/providers/auth");
 const { loadUsers, loadUser } = require("../middleware/utils");
 const { resourceUsage } = require("process");
+const { ESRCH } = require("constants");
 
 
 //Routes
@@ -71,6 +72,10 @@ router.post('/friends', auth, (req, res) => {
   ref.once('value')
     .then(snapshot => {
       const friends = snapshot.val()
+      if (friends == undefined) {
+        res.send([])
+        return
+      }
       //Extract friends' identifier
       const identifiers = friends.map(value => value.id)
       //Load updated users by identifier
