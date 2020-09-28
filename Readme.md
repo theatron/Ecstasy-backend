@@ -14,6 +14,11 @@ Deny friend request.
 ## /profile/friends
 Loads your friends
 
+## /profile/friend-requests
+Load friend requests(received, sent).
+#### Header:
+type: `type` (optional, R, S)
+
 ## /profile/be-friend
 Sends friend request.
 #### Header:

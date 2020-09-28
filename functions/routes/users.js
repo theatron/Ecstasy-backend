@@ -83,6 +83,20 @@ router.post('/profile/friends', auth, (req, res) => {
     })
 })
 
+//Load friend requests
+router.post('/profile/friend-requests', auth, (req, res) => {
+  const user = req.user
+  var ref = admin.database().ref().child("USER").child(user.uid).child("friendrns")
+  if (req.headers.type == "S" || req.headers.type == "R") {
+    ref = ref.orderByChild('type').equalTo(req.headers.type)
+  }
+  ref.once('value')
+    .then(snapshot => {
+      const requests = snapshot.val()
+      res.send(requests)
+    })
+})
+
 //Send friend request
 router.post('/profile/be-friend', auth, (req, res) => {
   const user = req.user
