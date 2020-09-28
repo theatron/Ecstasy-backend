@@ -2,6 +2,15 @@
 
 In some days there will be a proper instruction how to implement the backend for mobile platform
 
+## /profile/edit
+Deny friend request.
+#### Header:
+- name: `new name` (optional)
+- username: `new username` (optional)
+- bio: `new bio` (optional)
+- number: `new phonenumber` (optional)
+- web: `new website` (optional)
+
 ## /profile/friends
 Loads your friends
 
