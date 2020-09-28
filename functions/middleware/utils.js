@@ -27,7 +27,7 @@ async function sendFriendRequest(userIdentifier, friendIdentifier) {
     
     const user = await loadUser(userIdentifier)
     const friend = await loadUser(friendIdentifier)
-    console.log(user)
+    
     const userRef = firebase.admin.database().ref().child("USER").child(user.id).child("friendrns")
     userRef.once('value').then(snapshot => {
         const count = snapshot.hasChildren() ? snapshot.numChildren() : 0
@@ -38,9 +38,8 @@ async function sendFriendRequest(userIdentifier, friendIdentifier) {
             'photo': friend.photourl,
             'type': 'S'
         }
-        console.log(body)
-        const newRef = userRef.child(String(count))//.push()
-        //newRef.push()
+        
+        const newRef = userRef.child(String(count))
         newRef.set(body)
     })
 
@@ -55,16 +54,46 @@ async function sendFriendRequest(userIdentifier, friendIdentifier) {
             'type': 'R'
         }
 
-        const newRef = friendRef.child(String(count))//.push()
-        //newRef.push()
+        const newRef = friendRef.child(String(count))
         newRef.set(body)
     })
 
     return friend
 }
 
+async function acceptFriendRequest(userIdentifier, friendIdentifier) {
+    const userBasic = firebase.admin.database().ref().child("USER").child(userIdentifier)
+    const user = userBasic.child("friendrns")
+    user.orderByChild('id').equalTo(friendIdentifier).once('child_added', function(snapshot) {
+        const userFriend = userBasic.child('friends')
+        var body = snapshot.val()
+        delete body.type
+        userFriend.once('value').then(snapshot => {
+            const count = snapshot.hasChildren() ? snapshot.numChildren() : 0
+            userFriend.child(String(count)).set(body)
+        })
+
+        snapshot.ref.remove()
+    })
+
+    const friendBasic = firebase.admin.database().ref().child("USER").child(friendIdentifier)
+    const friend = friendBasic.child("friendrns")
+    friend.orderByChild('id').equalTo(userIdentifier).once('child_added', function(snapshot) {
+        const userFriend = friendBasic.child('friends')
+        var body = snapshot.val()
+        delete body.type
+        userFriend.once('value').then(snapshot => {
+            const count = snapshot.hasChildren() ? snapshot.numChildren() : 0
+            userFriend.child(String(count)).set(body)
+        })
+
+        snapshot.ref.remove()
+    })
+}
+
 module.exports = {
     loadUser: loadUser,
     loadUsers: loadUsers,
-    sendFriendRequest: sendFriendRequest
+    sendFriendRequest: sendFriendRequest,
+    acceptFriendRequest: acceptFriendRequest
 };
