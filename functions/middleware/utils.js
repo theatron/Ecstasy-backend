@@ -91,9 +91,24 @@ async function acceptFriendRequest(userIdentifier, friendIdentifier) {
     })
 }
 
+async function denyFriendRequest(userIdentifier, friendIdentifier) {
+    const userBasic = firebase.admin.database().ref().child("USER").child(userIdentifier)
+    const user = userBasic.child("friendrns")
+    user.orderByChild('id').equalTo(friendIdentifier).once('child_added', function(snapshot) {
+        snapshot.ref.remove()
+    })
+
+    const friendBasic = firebase.admin.database().ref().child("USER").child(friendIdentifier)
+    const friend = friendBasic.child("friendrns")
+    friend.orderByChild('id').equalTo(userIdentifier).once('child_added', function(snapshot) {
+        snapshot.ref.remove()
+    })
+}
+
 module.exports = {
     loadUser: loadUser,
     loadUsers: loadUsers,
     sendFriendRequest: sendFriendRequest,
-    acceptFriendRequest: acceptFriendRequest
+    acceptFriendRequest: acceptFriendRequest,
+    denyFriendRequest: denyFriendRequest
 };

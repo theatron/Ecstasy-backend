@@ -14,3 +14,8 @@ friend: `friendIdentifier`
 Accept friend request.
 #### Header:
 friend: `friendIdentifier`
+
+## /profile/deny-friend
+Deny friend request.
+#### Header:
+friend: `friendIdentifier`
