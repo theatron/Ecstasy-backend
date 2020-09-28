@@ -12,7 +12,7 @@ const ffmpeg = require('fluent-ffmpeg');
 const { database } = require("firebase-admin");
 const { equal } = require("assert");
 const { user } = require("firebase-functions/lib/providers/auth");
-const { loadUsers, loadUser } = require("../middleware/utils");
+const { loadUsers, loadUser, sendFriendRequest } = require("../middleware/utils");
 const { resourceUsage } = require("process");
 const { ESRCH } = require("constants");
 
@@ -25,8 +25,8 @@ router.post('/profile', auth ,  async (req,res)=>{
   //Getting the profile with the uid
     try{
       const user = req.user;
-      
-      res.status(200).send(user);
+      loadUser(user.uid)
+        .then(user => { res.status(200).send(user) })
       return user;
 
     }catch(e){
@@ -81,6 +81,19 @@ router.post('/profile/friends', auth, (req, res) => {
       //Load updated users by identifier
       loadUsers(identifiers).then(users => { res.send(users) })
     })
+})
+
+//Send friend request
+router.post('/profile/be-friend', auth, (req, res) => {
+  const user = req.user
+  
+  const friendIdentifier = req.headers.friend
+  if (friendIdentifier == undefined) {
+    res.send('error')
+    return
+  }
+  sendFriendRequest(user.uid, friendIdentifier).then(friend => { res.send(friend) })
+  
 })
 
 
