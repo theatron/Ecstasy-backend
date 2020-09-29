@@ -105,10 +105,38 @@ async function denyFriendRequest(userIdentifier, friendIdentifier) {
     })
 }
 
+async function usersFromNumber(identifier, number) {
+    const ref = firebase.admin.database().ref().child('USER')
+    const users = await ref.orderByChild('phonenumber').equalTo(number).once('value', (snapshot) => { 
+        var users = []
+        snapshot.forEach(childSnapshot => {
+            const user = childSnapshot.val()
+            user.id = childSnapshot.key
+            if (user.id !== identifier) {
+                users.push(user)
+            }
+            
+        })
+        return Array(users)
+    })
+    return users
+}
+
+async function usersFromNumbers(identifier, numbers) {
+    var users = []
+    for (var number in numbers) {
+        const friends = await usersFromNumber(identifier, numbers[number])
+        users.push(friends)
+    }
+    return users
+}
+
 module.exports = {
     loadUser: loadUser,
     loadUsers: loadUsers,
     sendFriendRequest: sendFriendRequest,
     acceptFriendRequest: acceptFriendRequest,
-    denyFriendRequest: denyFriendRequest
+    denyFriendRequest: denyFriendRequest,
+    usersFromNumber: usersFromNumber,
+    usersFromNumbers: usersFromNumbers
 };
