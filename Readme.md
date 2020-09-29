@@ -15,6 +15,7 @@ Deny friend request.
 Load possible friends by phonenumbers.
 #### Header:
 - phonenumbers: `phonenumber`
+
 you can provide more phonenumbers by adding `,`
 
 ## /profile/friends
