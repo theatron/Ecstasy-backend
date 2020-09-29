@@ -12,10 +12,10 @@ Deny friend request.
 - web: `new website` (optional)
 
 ## /profile/can-be-friends
-Deny friend request.
+Load possible friends by phonenumbers.
 #### Header:
 - phonenumbers: `phonenumber`
-**you can provide more phonenumbers by adding `,`**
+you can provide more phonenumbers by adding `,`
 
 ## /profile/friends
 Loads your friends
