@@ -178,6 +178,22 @@ async function cannotBeFriends(identifier) {
     return requests
 }
 
+async function deleteFriend(userIdentifier, friendIdentifier) {
+    const ref = firebase.admin.database().ref().child("USER")
+    const userRef = ref.child(userIdentifier).child("friends").orderByChild('id').equalTo(friendIdentifier)
+    const userSnapshot = await userRef.once('child_added')
+    if (userSnapshot.exists) {
+        userSnapshot.ref.remove()
+    }
+
+    const friendRef = ref.child(friendIdentifier).child("friends").orderByChild('id').equalTo(userIdentifier)
+    const friendSnapshot = await friendRef.once('child_added')
+    if (friendSnapshot.exists) {
+        friendSnapshot.ref.remove()
+    }
+    
+}
+
 module.exports = {
     loadUser: loadUser,
     loadUsers: loadUsers,
@@ -187,5 +203,6 @@ module.exports = {
     usersFromNumber: usersFromNumber,
     usersFromNumbers: usersFromNumbers,
     friendRequests: friendRequests,
-    cannotBeFriends: cannotBeFriends
+    cannotBeFriends: cannotBeFriends,
+    deleteFriend: deleteFriend
 };

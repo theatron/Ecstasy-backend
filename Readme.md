@@ -40,3 +40,9 @@ Accept friend request.
 Deny friend request.
 #### Header:
 - friend: `friendIdentifier`
+
+## /profile/delete-friend
+Delete friend.
+#### Header:
+- friend: `friendIdentifier`
+

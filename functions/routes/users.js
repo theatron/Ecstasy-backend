@@ -12,7 +12,7 @@ const ffmpeg = require('fluent-ffmpeg');
 const { database } = require("firebase-admin");
 const { equal } = require("assert");
 const { user } = require("firebase-functions/lib/providers/auth");
-const { loadUsers, loadUser, sendFriendRequest, acceptFriendRequest, denyFriendRequest, usersFromNumber, usersFromNumbers, friendRequests, cannotBeFriends } = require("../middleware/utils");
+const { loadUsers, loadUser, sendFriendRequest, acceptFriendRequest, denyFriendRequest, usersFromNumber, usersFromNumbers, friendRequests, cannotBeFriends, deleteFriend } = require("../middleware/utils");
 const { resourceUsage } = require("process");
 const { ESRCH } = require("constants");
 
@@ -69,7 +69,7 @@ router.post('/profile/edit', auth, (req, res) => {
   res.send('success')
 })
 
-
+//Load possible friends from number
 router.post('/profile/can-be-friends', auth, (req, res) => {
   const numbersRaw = req.headers.phonenumbers
   if (numbersRaw == undefined) {
@@ -104,6 +104,19 @@ router.post('/profile/friends', auth, (req, res) => {
       //Load updated users by identifier
       loadUsers(identifiers).then(users => { res.send(users) })
     })
+})
+
+//Delete friend
+router.post('/profile/delete-friend', auth, (req, res) => {
+  const friendIdentifier = req.headers.friend
+  if (friendIdentifier == undefined) {
+    res.send('error')
+    return
+  }
+
+  deleteFriend(req.user.uid, friendIdentifier)
+  res.send('success')
+
 })
 
 //Load friend requests
