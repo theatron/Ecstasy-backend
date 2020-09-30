@@ -141,6 +141,9 @@ async function usersFromNumbers(identifiers, numbers) {
 
 async function friendRequests(identifier) {
     var ref = firebase.admin.database().ref().child("USER").child(identifier).child("friendrns")
+    if (ref.exists == false) {
+        return []
+    }
     const snapshot = await ref.once('value')
     
     return snapshot.val()
@@ -148,6 +151,9 @@ async function friendRequests(identifier) {
 
 async function friendsIdentifier(identifier) {
     const ref = firebase.admin.database().ref().child("USER").child(identifier).child("friends")
+    if (ref.exists == false) {
+        return []
+    }
     const snapshot = await ref.once('value')
 
     const friends = snapshot.val()
@@ -162,6 +168,9 @@ async function friendsIdentifier(identifier) {
 async function cannotBeFriends(identifier) {
     var requests = await friendRequests(identifier)
     var friends = await friendsIdentifier(identifier)
+    if (requests == undefined) {
+        requests = []
+    }
     requests = requests.map(request => request.id)
 
     requests.push(friends)
