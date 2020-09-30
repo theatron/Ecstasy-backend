@@ -23,16 +23,20 @@ const { ESRCH } = require("constants");
 //Profile route
 router.post('/profile', auth ,  async (req,res)=>{
   //Getting the profile with the uid
-    try{
-      const user = req.user;
-      loadUser(user.uid)
-        .then(user => { res.status(200).send(user) })
-      return user;
+  const user = req.user
+  console.log("uid:", user.uid)
+  loadUser(user.uid).then(user => { res.send(user) })
+  //   try{
+  //     const user = req.user;
+  //     //loadUser(user.uid)
+  //       //.then(user => { res.status(200).send(user) })
+  //     res.status(200).send(user)
+  //     return user;
 
-    }catch(e){
-      res.status(401).send();
-      console.log(e);
-  }
+  //   }catch(e){
+  //     res.status(401).send();
+  //     console.log(e);
+  // }
 
 });
 
@@ -75,7 +79,6 @@ router.post('/profile/can-be-friends', auth, (req, res) => {
   
   const numbers = numbersRaw.trim().split(",")
   
-  //const numbers = req.headers.phonenumbers
   const id = req.user.uid
   
   usersFromNumbers(id, numbers).then(users => { res.send(users) })

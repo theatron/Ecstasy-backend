@@ -2,12 +2,14 @@
 const { userRecordConstructor } = require('firebase-functions/lib/providers/auth');
 const firebase = require('./firebaseFunc.js');
 
+
 async function loadUser(identifier) {
     const database = firebase.admin.database()
     const ref = database.ref().child("USER").child(identifier)
     
     var user = await ref.once('value', snapshot => { return snapshot.val() })
     user = user.toJSON()
+    console.log(user.name)
     user.id = ref.key
     return user
 }
@@ -106,27 +108,33 @@ async function denyFriendRequest(userIdentifier, friendIdentifier) {
 }
 
 async function usersFromNumber(identifier, number) {
-    const ref = firebase.admin.database().ref().child('USER')
-    const users = await ref.orderByChild('phonenumber').equalTo(number).once('value', (snapshot) => { 
-        var users = []
-        snapshot.forEach(childSnapshot => {
-            const user = childSnapshot.val()
-            user.id = childSnapshot.key
-            if (user.id !== identifier) {
-                users.push(user)
-            }
+    const ref = firebase.admin.database().ref().child('USER').orderByChild('phonenumber').equalTo(number)
+
+    const snapshot = await ref.once('value')
+    var newUsers = []
+    snapshot.forEach(childSnapshot => {
+        var customUser = childSnapshot.toJSON()
+             customUser.id = childSnapshot.key
             
-        })
-        return Array(users)
+             if (customUser.id !== identifier) {
+                 newUsers.push(customUser)
+             }
     })
-    return users
+    
+    return newUsers
 }
 
 async function usersFromNumbers(identifier, numbers) {
     var users = []
     for (var number in numbers) {
         const friends = await usersFromNumber(identifier, numbers[number])
-        users.push(friends)
+        friends.forEach(friend => {
+            
+        })
+        if (friends.toJSON !== null) {
+            friends.forEach(friend => { users.push(friend) })
+        }
+        
     }
     return users
 }
