@@ -107,7 +107,7 @@ async function denyFriendRequest(userIdentifier, friendIdentifier) {
     })
 }
 
-async function usersFromNumber(identifier, number) {
+async function usersFromNumber(identifiers, number) {
     const ref = firebase.admin.database().ref().child('USER').orderByChild('phonenumber').equalTo(number)
 
     const snapshot = await ref.once('value')
@@ -116,7 +116,7 @@ async function usersFromNumber(identifier, number) {
         var customUser = childSnapshot.toJSON()
              customUser.id = childSnapshot.key
             
-             if (customUser.id !== identifier) {
+             if (identifiers.includes(customUser.id) == false) {
                  newUsers.push(customUser)
              }
     })
@@ -124,10 +124,10 @@ async function usersFromNumber(identifier, number) {
     return newUsers
 }
 
-async function usersFromNumbers(identifier, numbers) {
+async function usersFromNumbers(identifiers, numbers) {
     var users = []
     for (var number in numbers) {
-        const friends = await usersFromNumber(identifier, numbers[number])
+        const friends = await usersFromNumber(identifiers, numbers[number])
         friends.forEach(friend => {
             
         })
@@ -139,6 +139,36 @@ async function usersFromNumbers(identifier, numbers) {
     return users
 }
 
+async function friendRequests(identifier) {
+    var ref = firebase.admin.database().ref().child("USER").child(identifier).child("friendrns")
+    const snapshot = await ref.once('value')
+    
+    return snapshot.val()
+}
+
+async function friendsIdentifier(identifier) {
+    const ref = firebase.admin.database().ref().child("USER").child(identifier).child("friends")
+    const snapshot = await ref.once('value')
+
+    const friends = snapshot.val()
+    if (friends == undefined) {
+        return []
+    }
+    //Extract friends' identifier
+    const identifiers = friends.map(value => value.id)
+    return identifiers
+}
+
+async function cannotBeFriends(identifier) {
+    var requests = await friendRequests(identifier)
+    var friends = await friendsIdentifier(identifier)
+    requests = requests.map(request => request.id)
+
+    requests.push(friends)
+    requests.push(identifier)
+    return requests
+}
+
 module.exports = {
     loadUser: loadUser,
     loadUsers: loadUsers,
@@ -146,5 +176,7 @@ module.exports = {
     acceptFriendRequest: acceptFriendRequest,
     denyFriendRequest: denyFriendRequest,
     usersFromNumber: usersFromNumber,
-    usersFromNumbers: usersFromNumbers
+    usersFromNumbers: usersFromNumbers,
+    friendRequests: friendRequests,
+    cannotBeFriends: cannotBeFriends
 };

@@ -12,7 +12,7 @@ const ffmpeg = require('fluent-ffmpeg');
 const { database } = require("firebase-admin");
 const { equal } = require("assert");
 const { user } = require("firebase-functions/lib/providers/auth");
-const { loadUsers, loadUser, sendFriendRequest, acceptFriendRequest, denyFriendRequest, usersFromNumber, usersFromNumbers } = require("../middleware/utils");
+const { loadUsers, loadUser, sendFriendRequest, acceptFriendRequest, denyFriendRequest, usersFromNumber, usersFromNumbers, friendRequests, cannotBeFriends } = require("../middleware/utils");
 const { resourceUsage } = require("process");
 const { ESRCH } = require("constants");
 
@@ -80,8 +80,13 @@ router.post('/profile/can-be-friends', auth, (req, res) => {
   const numbers = numbersRaw.trim().split(",")
   
   const id = req.user.uid
+
+  cannotBeFriends(id).then(identifiers => {
+    usersFromNumbers(identifiers, numbers).then(users => { res.send(users) })
+  })
   
-  usersFromNumbers(id, numbers).then(users => { res.send(users) })
+
+  
 })
 //Load friends
 router.post('/profile/friends', auth, (req, res) => {
