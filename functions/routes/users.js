@@ -12,7 +12,8 @@ const ffmpeg = require('fluent-ffmpeg');
 const { database } = require("firebase-admin");
 const { equal } = require("assert");
 const { user } = require("firebase-functions/lib/providers/auth");
-const { loadUsers, loadUser, sendFriendRequest, acceptFriendRequest, denyFriendRequest, usersFromNumber, usersFromNumbers, friendRequests, cannotBeFriends, deleteFriend } = require("../middleware/utils");
+const { loadUsers, loadUser, sendFriendRequest, acceptFriendRequest, denyFriendRequest, usersFromNumber, usersFromNumbers, friendRequests, cannotBeFriends,
+        deleteFriend, loadThumbnail } = require("../middleware/utils");
 const { resourceUsage } = require("process");
 const { ESRCH } = require("constants");
 
@@ -166,6 +167,14 @@ router.post('/profile/deny-friend', auth, (req, res) => {
   }
 
   denyFriendRequest(req.user.uid, friendIdentifier).then(() => { res.send('success') })
+})
+
+//Thumbnail
+router.post('/profile/thumbnail', auth, (req, res) => {
+
+    const user = req.user
+    loadThumbnail(user.uid).then(videos => res.send(videos))
+
 })
 
 

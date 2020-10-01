@@ -198,6 +198,40 @@ async function deleteFriend(userIdentifier, friendIdentifier) {
     
 }
 
+async function videosFromUser(userIdentifier) {
+    const ref = firebase.admin.database().ref().child("USER").child(userIdentifier).child('videolist')
+    if (ref.exists == false) {
+        return []
+    } 
+    const snapshot = await ref.once('value')
+    console.log(snapshot.val())
+    return snapshot.val()
+}
+
+async function friendVideos(userIdentifier) {
+    var videos = []
+    const loadedFriendsIdentifier = await friendsIdentifier(userIdentifier)
+    console.log(loadedFriendsIdentifier, loadedFriendsIdentifier.length)
+    for (var index in loadedFriendsIdentifier) {
+        const newVideos = await videosFromUser(loadedFriendsIdentifier[index])
+        newVideos.forEach(video => {
+            videos.push(video)
+        })
+    }
+
+    return videos
+}
+
+async function loadThumbnail(userIdentifier) {
+    var videos = []
+    const friendLoadedVideos = await friendVideos(userIdentifier)
+    friendLoadedVideos.forEach(video => {
+        videos.push(video)
+    })
+
+    return videos
+}
+
 module.exports = {
     loadUser: loadUser,
     loadUsers: loadUsers,
@@ -208,5 +242,6 @@ module.exports = {
     usersFromNumbers: usersFromNumbers,
     friendRequests: friendRequests,
     cannotBeFriends: cannotBeFriends,
-    deleteFriend: deleteFriend
+    deleteFriend: deleteFriend,
+    loadThumbnail: loadThumbnail
 };

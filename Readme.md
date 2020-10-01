@@ -46,3 +46,6 @@ Delete friend.
 #### Header:
 - friend: `friendIdentifier`
 
+## /profile/thumbnail
+Load thumbnail videos
+
