@@ -13,7 +13,7 @@ const { database } = require("firebase-admin");
 const { equal } = require("assert");
 const { user } = require("firebase-functions/lib/providers/auth");
 const { loadUsers, loadUser, sendFriendRequest, acceptFriendRequest, denyFriendRequest, usersFromNumber, usersFromNumbers, friendRequests, cannotBeFriends,
-        deleteFriend, loadThumbnail } = require("../middleware/utils");
+        deleteFriend, loadThumbnail, likeVideo } = require("../middleware/utils");
 const { resourceUsage } = require("process");
 const { ESRCH } = require("constants");
 
@@ -174,6 +174,23 @@ router.post('/profile/thumbnail', auth, (req, res) => {
 
     const user = req.user
     loadThumbnail(user.uid).then(videos => res.send(videos))
+
+})
+
+//Like video
+router.post('/profile/like-video', auth, (req, res) => {
+
+  const user = req.user
+  const videoOwner = req.headers.video_owner
+  const videoNumber = req.headers.video_number
+  
+  if (videoOwner == undefined || videoNumber == undefined) {
+    res.send('error')
+    return
+  }
+
+  likeVideo(user.uid, videoOwner, videoNumber)
+  res.send('success')
 
 })
 

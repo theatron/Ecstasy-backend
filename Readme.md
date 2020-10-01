@@ -49,3 +49,9 @@ Delete friend.
 ## /profile/thumbnail
 Load thumbnail videos
 
+## /profile/like-video
+Add like to video
+#### Header:
+- video_owner: `video owner's identifier`
+- video_number: `video number`
+

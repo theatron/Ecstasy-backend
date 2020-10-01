@@ -232,6 +232,18 @@ async function loadThumbnail(userIdentifier) {
     return videos
 }
 
+async function likeVideo(userIdentifier, videoOwner, videoNumber) {
+    
+    const userRef = firebase.admin.database().ref().child("USER").child(videoOwner)
+    const likeDislike = userRef.child('likedislike').child(String(videoNumber)).child('likedby')
+    likeDislike.push({"id": userIdentifier})
+
+    const likeRef = userRef.child('videolist').child(String(videoNumber))
+    const snapshot = await likeRef.once('value')
+    const likes = Number(snapshot.toJSON().likes ?? "0")
+    likeRef.update({"likes": String(likes + 1)})
+}
+
 module.exports = {
     loadUser: loadUser,
     loadUsers: loadUsers,
@@ -243,5 +255,6 @@ module.exports = {
     friendRequests: friendRequests,
     cannotBeFriends: cannotBeFriends,
     deleteFriend: deleteFriend,
-    loadThumbnail: loadThumbnail
+    loadThumbnail: loadThumbnail,
+    likeVideo: likeVideo
 };
