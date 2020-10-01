@@ -171,9 +171,13 @@ async function cannotBeFriends(identifier) {
     if (requests == undefined) {
         requests = []
     }
+    if (friends == undefined) {
+        friends = []
+    }
     requests = requests.map(request => request.id)
-
-    requests.push(friends)
+    friends.forEach(friend => {
+        requests.push(friend)
+    })
     requests.push(identifier)
     return requests
 }
