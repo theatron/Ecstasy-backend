@@ -12,8 +12,7 @@ const ffmpeg = require('fluent-ffmpeg');
 const { database } = require("firebase-admin");
 const { equal } = require("assert");
 const { user } = require("firebase-functions/lib/providers/auth");
-const { loadUsers, loadUser, sendFriendRequest, acceptFriendRequest, denyFriendRequest, usersFromNumber, usersFromNumbers, friendRequests, cannotBeFriends,
-        deleteFriend, loadThumbnail, likeVideo, deleteVideoLike, dislikeVideo, deleteVideoDislike } = require("../middleware/utils");
+const { loadUsers, loadUser, sendFriendRequest, acceptFriendRequest, denyFriendRequest, usersFromNumber, usersFromNumbers, friendRequests, cannotBeFriends, deleteFriend, loadThumbnail, likeVideo, deleteVideoLike, dislikeVideo, deleteVideoDislike} = require("../middleware/utils");
 const { resourceUsage } = require("process");
 const { ESRCH } = require("constants");
 
@@ -296,8 +295,6 @@ router.post('/profile/remove-video-dislike', auth, (req, res) => {
         ]).save(outputFilePath);
 
         
-        
-    
           bucket.upload(outputFilePath, {
             destination: 'videos/'+userName+Date.now(),
             metadata: metadata

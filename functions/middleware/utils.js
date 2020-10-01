@@ -240,7 +240,10 @@ async function likeVideo(userIdentifier, videoOwner, videoNumber) {
 
     const likeRef = userRef.child('videolist').child(String(videoNumber))
     const snapshot = await likeRef.once('value')
-    const likes = Number(snapshot.toJSON().likes ?? "0")
+    var likes = Number(snapshot.toJSON().likes)
+    if (likes == undefined) {
+        likes = "0"
+    }
     likeRef.update({"likes": String(likes + 1)})
 }
 
@@ -253,7 +256,10 @@ async function deleteVideoLike(userIdentifier, videoOwner, videoNumber) {
 
     const likeRef = userRef.child('videolist').child(String(videoNumber))
     const snapshot = await likeRef.once('value')
-    const likes = Number(snapshot.toJSON().likes ?? "1")
+    var likes = Number(snapshot.toJSON().likes)
+    if (likes == undefined) {
+        likes = "1"
+    }
     likeRef.update({"likes": String(likes - 1)})
 }
 
@@ -265,7 +271,10 @@ async function dislikeVideo(userIdentifier, videoOwner, videoNumber) {
 
     const dislikeRef = userRef.child('videolist').child(String(videoNumber))
     const snapshot = await dislikeRef.once('value')
-    const dislikes = Number(snapshot.toJSON().dislikes ?? "0")
+    var dislikes = Number(snapshot.toJSON().dislikes)
+    if (dislikes == undefined) {
+        dislikes = "0"
+    }
     dislikeRef.update({"dislikes": String(dislikes + 1)})
 }
 
@@ -278,7 +287,10 @@ async function deleteVideoDislike(userIdentifier, videoOwner, videoNumber) {
 
     const dislikeRef = userRef.child('videolist').child(String(videoNumber))
     const snapshot = await dislikeRef.once('value')
-    const dislikes = Number(snapshot.toJSON().dislikes ?? "1")
+    var dislikes = Number(snapshot.toJSON().dislikes)
+    if (dislikes == undefined) {
+        dislikes = "1"
+    }
     dislikeRef.update({"dislikes": String(dislikes - 1)})
 }
 
