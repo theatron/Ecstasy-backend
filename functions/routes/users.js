@@ -12,7 +12,7 @@ const ffmpeg = require('fluent-ffmpeg');
 const { database } = require("firebase-admin");
 const { equal } = require("assert");
 const { user } = require("firebase-functions/lib/providers/auth");
-const { loadUsers, loadUser, sendFriendRequest, acceptFriendRequest, denyFriendRequest, usersFromNumber, usersFromNumbers, friendRequests, cannotBeFriends, deleteFriend, loadThumbnail, likeVideo, deleteVideoLike, dislikeVideo, deleteVideoDislike} = require("../middleware/utils");
+const { loadUsers, loadUser, sendFriendRequest, acceptFriendRequest, denyFriendRequest, usersFromNumber, usersFromNumbers, friendRequests, cannotBeFriends, deleteFriend, loadThumbnail, likeVideo, deleteVideoLike, dislikeVideo, deleteVideoDislike, likesVideo, dislikesVideo} = require("../middleware/utils");
 const { resourceUsage } = require("process");
 const { ESRCH } = require("constants");
 
@@ -224,7 +224,7 @@ router.post('/profile/dislike-video', auth, (req, res) => {
   res.send('success')
 
 })
-
+//Remove video dislike
 router.post('/profile/remove-video-dislike', auth, (req, res) => {
 
   const user = req.user
@@ -238,6 +238,33 @@ router.post('/profile/remove-video-dislike', auth, (req, res) => {
 
   deleteVideoDislike(user.uid, videoOwner, videoNumber)
   res.send('success')
+})
+
+//User likes video?
+router.post('/profile/likes-video', auth, (req, res) => {
+  const user = req.user
+  const videoOwner = req.headers.video_owner
+  const videoNumber = req.headers.video_number
+  
+  if (videoOwner == undefined || videoNumber == undefined) {
+    res.send(false)
+    return
+  }
+  likesVideo(user.uid, videoOwner, videoNumber).then(likes => res.send(likes))
+  
+})
+//User dislikes video
+router.post('/profile/dislikes-video', auth, (req, res) => {
+  const user = req.user
+  const videoOwner = req.headers.video_owner
+  const videoNumber = req.headers.video_number
+  
+  if (videoOwner == undefined || videoNumber == undefined) {
+    res.send(false)
+    return
+  }
+  dislikesVideo(user.uid, videoOwner, videoNumber).then(likes => res.send(likes))
+  
 })
 
 

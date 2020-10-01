@@ -294,6 +294,42 @@ async function deleteVideoDislike(userIdentifier, videoOwner, videoNumber) {
     dislikeRef.update({"dislikes": String(dislikes - 1)})
 }
 
+async function likesVideo(userIdentifier, videoOwner, videoNumber) {
+    const ref = firebase.admin.database().ref().child('USER').child(videoOwner).child("likedislike").child(String(videoNumber)).child('likedby')
+    if (ref.exists == false) {
+        return false
+    }
+    const snapshot = await ref.once('value')
+    const values = snapshot.toJSON()
+
+    for (childSnapshot in values) {
+        
+        if (values[childSnapshot].id) {
+            return true
+        }
+    }
+    return false
+
+}
+
+async function dislikesVideo(userIdentifier, videoOwner, videoNumber) {
+    const ref = firebase.admin.database().ref().child('USER').child(videoOwner).child("likedislike").child(String(videoNumber)).child('dislikedby')
+    if (ref.exists == false) {
+        return false
+    }
+    const snapshot = await ref.once('value')
+    const values = snapshot.toJSON()
+
+    for (childSnapshot in values) {
+        
+        if (values[childSnapshot].id) {
+            return true
+        }
+    }
+    return false
+
+}
+
 module.exports = {
     loadUser: loadUser,
     loadUsers: loadUsers,
@@ -309,5 +345,7 @@ module.exports = {
     likeVideo: likeVideo,
     deleteVideoLike: deleteVideoLike,
     dislikeVideo: dislikeVideo,
-    deleteVideoDislike: deleteVideoDislike
+    deleteVideoDislike: deleteVideoDislike,
+    likesVideo: likesVideo,
+    dislikesVideo: dislikesVideo
 };
