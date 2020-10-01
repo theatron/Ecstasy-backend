@@ -13,7 +13,7 @@ const { database } = require("firebase-admin");
 const { equal } = require("assert");
 const { user } = require("firebase-functions/lib/providers/auth");
 const { loadUsers, loadUser, sendFriendRequest, acceptFriendRequest, denyFriendRequest, usersFromNumber, usersFromNumbers, friendRequests, cannotBeFriends,
-        deleteFriend, loadThumbnail, likeVideo } = require("../middleware/utils");
+        deleteFriend, loadThumbnail, likeVideo, deleteVideoLike, dislikeVideo, deleteVideoDislike } = require("../middleware/utils");
 const { resourceUsage } = require("process");
 const { ESRCH } = require("constants");
 
@@ -192,6 +192,53 @@ router.post('/profile/like-video', auth, (req, res) => {
   likeVideo(user.uid, videoOwner, videoNumber)
   res.send('success')
 
+})
+//Remove video like
+router.post('/profile/remove-video-like', auth, (req, res) => {
+
+  const user = req.user
+  const videoOwner = req.headers.video_owner
+  const videoNumber = req.headers.video_number
+  
+  if (videoOwner == undefined || videoNumber == undefined) {
+    res.send('error')
+    return
+  }
+
+  deleteVideoLike(user.uid, videoOwner, videoNumber)
+  res.send('success')
+})
+
+//Dislike video
+router.post('/profile/dislike-video', auth, (req, res) => {
+
+  const user = req.user
+  const videoOwner = req.headers.video_owner
+  const videoNumber = req.headers.video_number
+  
+  if (videoOwner == undefined || videoNumber == undefined) {
+    res.send('error')
+    return
+  }
+
+  dislikeVideo(user.uid, videoOwner, videoNumber)
+  res.send('success')
+
+})
+
+router.post('/profile/remove-video-dislike', auth, (req, res) => {
+
+  const user = req.user
+  const videoOwner = req.headers.video_owner
+  const videoNumber = req.headers.video_number
+  
+  if (videoOwner == undefined || videoNumber == undefined) {
+    res.send('error')
+    return
+  }
+
+  deleteVideoDislike(user.uid, videoOwner, videoNumber)
+  res.send('success')
 })
 
 

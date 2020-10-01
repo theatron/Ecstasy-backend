@@ -244,6 +244,44 @@ async function likeVideo(userIdentifier, videoOwner, videoNumber) {
     likeRef.update({"likes": String(likes + 1)})
 }
 
+async function deleteVideoLike(userIdentifier, videoOwner, videoNumber) {
+    
+    const userRef = firebase.admin.database().ref().child("USER").child(videoOwner)
+    const likeDislike = userRef.child('likedislike').child(String(videoNumber)).child('likedby').orderByChild('id').equalTo(userIdentifier)
+    const likeDislikeSnapshot = await likeDislike.once('child_added')
+    likeDislikeSnapshot.ref.remove()
+
+    const likeRef = userRef.child('videolist').child(String(videoNumber))
+    const snapshot = await likeRef.once('value')
+    const likes = Number(snapshot.toJSON().likes ?? "1")
+    likeRef.update({"likes": String(likes - 1)})
+}
+
+async function dislikeVideo(userIdentifier, videoOwner, videoNumber) {
+    
+    const userRef = firebase.admin.database().ref().child("USER").child(videoOwner)
+    const likeDislike = userRef.child('likedislike').child(String(videoNumber)).child('dislikedby')
+    likeDislike.push({"id": userIdentifier})
+
+    const dislikeRef = userRef.child('videolist').child(String(videoNumber))
+    const snapshot = await dislikeRef.once('value')
+    const dislikes = Number(snapshot.toJSON().dislikes ?? "0")
+    dislikeRef.update({"dislikes": String(dislikes + 1)})
+}
+
+async function deleteVideoDislike(userIdentifier, videoOwner, videoNumber) {
+    
+    const userRef = firebase.admin.database().ref().child("USER").child(videoOwner)
+    const likeDislike = userRef.child('likedislike').child(String(videoNumber)).child('dislikedby').orderByChild('id').equalTo(userIdentifier)
+    const likeDislikeSnapshot = await likeDislike.once('child_added')
+    likeDislikeSnapshot.ref.remove()
+
+    const dislikeRef = userRef.child('videolist').child(String(videoNumber))
+    const snapshot = await dislikeRef.once('value')
+    const dislikes = Number(snapshot.toJSON().dislikes ?? "1")
+    dislikeRef.update({"dislikes": String(dislikes - 1)})
+}
+
 module.exports = {
     loadUser: loadUser,
     loadUsers: loadUsers,
@@ -256,5 +294,8 @@ module.exports = {
     cannotBeFriends: cannotBeFriends,
     deleteFriend: deleteFriend,
     loadThumbnail: loadThumbnail,
-    likeVideo: likeVideo
+    likeVideo: likeVideo,
+    deleteVideoLike: deleteVideoLike,
+    dislikeVideo: dislikeVideo,
+    deleteVideoDislike: deleteVideoDislike
 };
