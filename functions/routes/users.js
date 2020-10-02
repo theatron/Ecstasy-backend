@@ -12,7 +12,7 @@ const ffmpeg = require('fluent-ffmpeg');
 const { database } = require("firebase-admin");
 const { equal } = require("assert");
 const { user } = require("firebase-functions/lib/providers/auth");
-const { loadUsers, loadUser, sendFriendRequest, acceptFriendRequest, denyFriendRequest, usersFromNumber, usersFromNumbers, friendRequests, cannotBeFriends, deleteFriend, loadThumbnail, likeVideo, deleteVideoLike, dislikeVideo, deleteVideoDislike, likesVideo, dislikesVideo} = require("../middleware/utils");
+const { Utils } = require('../middleware/utils')
 const { resourceUsage } = require("process");
 const { ESRCH } = require("constants");
 
@@ -25,7 +25,7 @@ router.post('/profile', auth ,  async (req,res)=>{
   //Getting the profile with the uid
   const user = req.user
   console.log("uid:", user.uid)
-  loadUser(user.uid).then(user => { res.send(user) })
+  Utils.loadUser(user.uid).then(user => { res.send(user) })
   //   try{
   //     const user = req.user;
   //     //loadUser(user.uid)
@@ -81,8 +81,8 @@ router.post('/profile/can-be-friends', auth, (req, res) => {
   
   const id = req.user.uid
 
-  cannotBeFriends(id).then(identifiers => {
-    usersFromNumbers(identifiers, numbers).then(users => { res.send(users) })
+  Utils.annotBeFriends(id).then(identifiers => {
+    Utils.usersFromNumbers(identifiers, numbers).then(users => { res.send(users) })
   })
   
 
@@ -102,7 +102,7 @@ router.post('/profile/friends', auth, (req, res) => {
       //Extract friends' identifier
       const identifiers = friends.map(value => value.id)
       //Load updated users by identifier
-      loadUsers(identifiers).then(users => { res.send(users) })
+      Utils.loadUsers(identifiers).then(users => { res.send(users) })
     })
 })
 
@@ -114,7 +114,7 @@ router.post('/profile/delete-friend', auth, (req, res) => {
     return
   }
 
-  deleteFriend(req.user.uid, friendIdentifier)
+  Utils.deleteFriend(req.user.uid, friendIdentifier)
   res.send('success')
 
 })
@@ -142,7 +142,7 @@ router.post('/profile/be-friend', auth, (req, res) => {
     res.send('error')
     return
   }
-  sendFriendRequest(user.uid, friendIdentifier).then(friend => { res.send(friend) })
+  Utils.sendFriendRequest(user.uid, friendIdentifier).then(friend => { res.send(friend) })
   
 })
 
@@ -154,7 +154,7 @@ router.post('/profile/accept-friend', auth, (req, res) => {
     return
   }
 
-  acceptFriendRequest(req.user.uid, friendIdentifier).then(() => { res.send('success') })
+  Utils.acceptFriendRequest(req.user.uid, friendIdentifier).then(() => { res.send('success') })
 })
 
 //Deny friend request
@@ -165,14 +165,14 @@ router.post('/profile/deny-friend', auth, (req, res) => {
     return
   }
 
-  denyFriendRequest(req.user.uid, friendIdentifier).then(() => { res.send('success') })
+  Utils.denyFriendRequest(req.user.uid, friendIdentifier).then(() => { res.send('success') })
 })
 
 //Thumbnail
 router.post('/profile/thumbnail', auth, (req, res) => {
 
     const user = req.user
-    loadThumbnail(user.uid).then(videos => res.send(videos))
+    Utils.oadThumbnail(user.uid).then(videos => res.send(videos))
 
 })
 
@@ -188,7 +188,7 @@ router.post('/profile/like-video', auth, (req, res) => {
     return
   }
 
-  likeVideo(user.uid, videoOwner, videoNumber)
+  Utils.likeVideo(user.uid, videoOwner, videoNumber)
   res.send('success')
 
 })
@@ -204,7 +204,7 @@ router.post('/profile/remove-video-like', auth, (req, res) => {
     return
   }
 
-  deleteVideoLike(user.uid, videoOwner, videoNumber)
+  Utils.deleteVideoLike(user.uid, videoOwner, videoNumber)
   res.send('success')
 })
 
@@ -220,7 +220,7 @@ router.post('/profile/dislike-video', auth, (req, res) => {
     return
   }
 
-  dislikeVideo(user.uid, videoOwner, videoNumber)
+  Utils.dislikeVideo(user.uid, videoOwner, videoNumber)
   res.send('success')
 
 })
@@ -236,7 +236,7 @@ router.post('/profile/remove-video-dislike', auth, (req, res) => {
     return
   }
 
-  deleteVideoDislike(user.uid, videoOwner, videoNumber)
+  Utils.deleteVideoDislike(user.uid, videoOwner, videoNumber)
   res.send('success')
 })
 
@@ -250,7 +250,7 @@ router.post('/profile/likes-video', auth, (req, res) => {
     res.send(false)
     return
   }
-  likesVideo(user.uid, videoOwner, videoNumber).then(likes => res.send(likes))
+  Utils.likesVideo(user.uid, videoOwner, videoNumber).then(likes => res.send(likes))
   
 })
 //User dislikes video
@@ -263,8 +263,19 @@ router.post('/profile/dislikes-video', auth, (req, res) => {
     res.send(false)
     return
   }
-  dislikesVideo(user.uid, videoOwner, videoNumber).then(likes => res.send(likes))
+  Utils.dislikesVideo(user.uid, videoOwner, videoNumber).then(likes => res.send(likes))
   
+})
+
+//Users from name
+router.post('/profile/users-from-name', auth, (req, res) => {
+  const text = req.headers.text
+  if (text == undefined) {
+    res.send('error')
+    return
+  }
+
+  Utils.usersFromName(text).then(users => res.send(users))
 })
 
 

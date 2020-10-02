@@ -85,3 +85,8 @@ Check if user dislikes video
 - video_owner: `video owner's identifier`
 - video_number: `video number`
 
+## /profile/users-from-name
+Search users by name
+#### Header:
+- text: `user's name query`
+
