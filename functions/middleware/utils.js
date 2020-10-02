@@ -361,6 +361,29 @@ class Utils {
         const admiringSnapshot = await admiringRef.once('value')
         admiringRef.child(String(admiringSnapshot.numChildren())).set({'id': userIdentifier})
     }
+
+    static async removeAdmire(userIdentifier, admireIdentifier) {
+        const ref = firebase.admin.database().ref().child("USER")
+        const admiringRef = ref.child(userIdentifier).child("admiring").orderByChild('id').equalTo(admireIdentifier)
+        const admiringSnapshot = await admiringRef.once('child_added')
+        if (admiringSnapshot.exists) {
+            admiringSnapshot.ref.remove()
+        }
+    
+        const admirersRef = ref.child(admireIdentifier).child("admirers").orderByChild('id').equalTo(userIdentifier)
+        const admirersSnapshot = await admirersRef.once('child_added')
+        if (admirersSnapshot.exists) {
+            admirersSnapshot.ref.remove()
+        }
+
+        const admiringCountRef = ref.child(admireIdentifier)
+        const countSnapshot = await admiringCountRef.once('value')
+        var count = Number(countSnapshot.toJSON().admirerscount)
+        if (count == undefined) {
+            count = "1"
+        }
+        admiringCountRef.update({"admirerscount": String(count - 1)})
+    }
 }
 
 module.exports = { Utils }

@@ -91,7 +91,12 @@ Search users by name
 - text: `user's name query`
 
 ## /profile/admire
-Search users by name
+Admire user
 #### Header:
 - user: `user's identifier to admire`
+
+## /profile/remove-admire
+Remove user admire
+#### Header:
+- user: `user's identifier`
 

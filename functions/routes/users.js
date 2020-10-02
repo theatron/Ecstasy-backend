@@ -293,6 +293,14 @@ router.post('/profile/admire', auth, (req, res) => {
 
 router.post('/profile/remove-admire', auth, (req, res) => {
 
+  const admireIdentifier = req.headers.user
+  if (admireIdentifier == undefined) {
+    res.send('error')
+    return
+  }
+
+  Utils.removeAdmire(req.user.uid, admireIdentifier).then(() => res.send('success'))
+  
 })
 
 
