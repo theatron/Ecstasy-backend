@@ -1,5 +1,5 @@
 
-const { userRecordConstructor } = require('firebase-functions/lib/providers/auth');
+const { userRecordConstructor, user } = require('firebase-functions/lib/providers/auth');
 const firebase = require('./firebaseFunc.js');
 
 
@@ -10,7 +10,7 @@ class Utils {
         
         var user = await ref.once('value', snapshot => { return snapshot.val() })
         user = user.toJSON()
-        console.log(user.name)
+       
         user.id = ref.key
         return user
     }
@@ -19,7 +19,7 @@ class Utils {
         var users = []
         
         for (var index in identifiers) {
-            const user = await loadUser(identifiers[index])
+            const user = await Utils.loadUser(identifiers[index])
             users.push(user)
         }
     
@@ -28,8 +28,8 @@ class Utils {
     
     static async sendFriendRequest(userIdentifier, friendIdentifier) {
         
-        const user = await loadUser(userIdentifier)
-        const friend = await loadUser(friendIdentifier)
+        const user = await Utils.loadUser(userIdentifier)
+        const friend = await Utils.loadUser(friendIdentifier)
         
         const userRef = firebase.admin.database().ref().child("USER").child(user.id).child("friendrns")
         userRef.once('value').then(snapshot => {
@@ -128,7 +128,7 @@ class Utils {
     static async usersFromNumbers(identifiers, numbers) {
         var users = []
         for (var number in numbers) {
-            const friends = await usersFromNumber(identifiers, numbers[number])
+            const friends = await Utils.usersFromNumber(identifiers, numbers[number])
             friends.forEach(friend => {
                 
             })
@@ -167,8 +167,8 @@ class Utils {
     }
     
     static async cannotBeFriends(identifier) {
-        var requests = await friendRequests(identifier)
-        var friends = await friendsIdentifier(identifier)
+        var requests = await Utils.friendRequests(identifier)
+        var friends = await Utils.friendsIdentifier(identifier)
         if (requests == undefined) {
             requests = []
         }
@@ -211,10 +211,10 @@ class Utils {
     
     static async friendVideos(userIdentifier) {
         var videos = []
-        const loadedFriendsIdentifier = await friendsIdentifier(userIdentifier)
+        const loadedFriendsIdentifier = await Utils.friendsIdentifier(userIdentifier)
         console.log(loadedFriendsIdentifier, loadedFriendsIdentifier.length)
         for (var index in loadedFriendsIdentifier) {
-            const newVideos = await videosFromUser(loadedFriendsIdentifier[index])
+            const newVideos = await Utils.videosFromUser(loadedFriendsIdentifier[index])
             newVideos.forEach(video => {
                 videos.push(video)
             })
@@ -225,7 +225,7 @@ class Utils {
     
     static async loadThumbnail(userIdentifier) {
         var videos = []
-        const friendLoadedVideos = await friendVideos(userIdentifier)
+        const friendLoadedVideos = await Utils.friendVideos(userIdentifier)
         friendLoadedVideos.forEach(video => {
             videos.push(video)
         })
@@ -341,6 +341,25 @@ class Utils {
             users.push(user)
         })
         return users
+    }
+
+    static async admire(userIdentifier, admireIdentifier) {
+        const globalUserRef = firebase.admin.database().ref('USER')
+        const userRef = globalUserRef.child(userIdentifier).child('admiring')
+        const snapshot = await userRef.once('value')
+        userRef.child(String(snapshot.numChildren())).set({'id': admireIdentifier})
+
+        const admireRef = globalUserRef.child(admireIdentifier)
+        const admireSnapshot = await admireRef.once('value')
+        var admireCount = admireSnapshot.toJSON().admirerscount
+        if (admireCount == undefined) {
+            admireCount = '0'
+        }
+        admireRef.update({'admirerscount': String(Number(admireCount) + 1)})
+
+        const admiringRef = admireRef.child('admirers')
+        const admiringSnapshot = await admiringRef.once('value')
+        admiringRef.child(String(admiringSnapshot.numChildren())).set({'id': userIdentifier})
     }
 }
 

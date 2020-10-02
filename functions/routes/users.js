@@ -81,7 +81,7 @@ router.post('/profile/can-be-friends', auth, (req, res) => {
   
   const id = req.user.uid
 
-  Utils.annotBeFriends(id).then(identifiers => {
+  Utils.cannotBeFriends(id).then(identifiers => {
     Utils.usersFromNumbers(identifiers, numbers).then(users => { res.send(users) })
   })
   
@@ -276,6 +276,23 @@ router.post('/profile/users-from-name', auth, (req, res) => {
   }
 
   Utils.usersFromName(text).then(users => res.send(users))
+})
+
+//Admire user
+router.post('/profile/admire', auth, (req, res) => {
+
+  const admireIdentifier = req.headers.user
+  if (admireIdentifier == undefined) {
+    res.send('error')
+    return
+  }
+
+  Utils.admire(req.user.uid, admireIdentifier).then(() => res.send('success'))
+
+})
+
+router.post('/profile/remove-admire', auth, (req, res) => {
+
 })
 
 

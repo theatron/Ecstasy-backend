@@ -90,3 +90,8 @@ Search users by name
 #### Header:
 - text: `user's name query`
 
+## /profile/admire
+Search users by name
+#### Header:
+- user: `user's identifier to admire`
+
