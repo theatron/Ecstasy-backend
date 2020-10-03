@@ -24,7 +24,7 @@ const { ESRCH } = require("constants");
 router.post('/profile', auth ,  async (req,res)=>{
   //Getting the profile with the uid
   const user = req.user
-  console.log("uid:", user.uid)
+  
   Utils.loadUser(user.uid).then(user => { res.send(user) })
   //   try{
   //     const user = req.user;
@@ -49,7 +49,7 @@ router.post('/profile/edit', auth, (req, res) => {
   const website = headers.website
   
   const ref = admin.database().ref().child("USER").child(req.user.uid)
-  console.log(req.user)
+  
   if (name != undefined) {
     ref.update({"name": name})
   }
@@ -67,7 +67,7 @@ router.post('/profile/edit', auth, (req, res) => {
   }
 
   res.send('success')
-})
+});
 
 //Load possible friends from number
 router.post('/profile/can-be-friends', auth, (req, res) => {
@@ -87,7 +87,7 @@ router.post('/profile/can-be-friends', auth, (req, res) => {
   
 
   
-})
+});
 //Load friends
 router.post('/profile/friends', auth, (req, res) => {
   const user = req.user
@@ -104,7 +104,7 @@ router.post('/profile/friends', auth, (req, res) => {
       //Load updated users by identifier
       Utils.loadUsers(identifiers).then(users => { res.send(users) })
     })
-})
+});
 
 //Delete friend
 router.post('/profile/delete-friend', auth, (req, res) => {
@@ -117,7 +117,7 @@ router.post('/profile/delete-friend', auth, (req, res) => {
   Utils.deleteFriend(req.user.uid, friendIdentifier)
   res.send('success')
 
-})
+});
 
 //Load friend requests
 router.post('/profile/friend-requests', auth, (req, res) => {
@@ -131,7 +131,7 @@ router.post('/profile/friend-requests', auth, (req, res) => {
       const requests = snapshot.val()
       res.send(requests)
     })
-})
+});
 
 //Send friend request
 router.post('/profile/be-friend', auth, (req, res) => {
@@ -144,7 +144,7 @@ router.post('/profile/be-friend', auth, (req, res) => {
   }
   Utils.sendFriendRequest(user.uid, friendIdentifier).then(friend => { res.send(friend) })
   
-})
+});
 
 //Accept friend request
 router.post('/profile/accept-friend', auth, (req, res) => {
@@ -155,7 +155,7 @@ router.post('/profile/accept-friend', auth, (req, res) => {
   }
 
   Utils.acceptFriendRequest(req.user.uid, friendIdentifier).then(() => { res.send('success') })
-})
+});
 
 //Deny friend request
 router.post('/profile/deny-friend', auth, (req, res) => {
@@ -166,15 +166,15 @@ router.post('/profile/deny-friend', auth, (req, res) => {
   }
 
   Utils.denyFriendRequest(req.user.uid, friendIdentifier).then(() => { res.send('success') })
-})
+});
 
 //Thumbnail
 router.post('/profile/thumbnail', auth, (req, res) => {
 
     const user = req.user
-    Utils.oadThumbnail(user.uid).then(videos => res.send(videos))
+    Utils.loadThumbnail(user.uid).then(videos => res.send(videos))
 
-})
+});
 
 //Like video
 router.post('/profile/like-video', auth, (req, res) => {
@@ -191,7 +191,7 @@ router.post('/profile/like-video', auth, (req, res) => {
   Utils.likeVideo(user.uid, videoOwner, videoNumber)
   res.send('success')
 
-})
+});
 //Remove video like
 router.post('/profile/remove-video-like', auth, (req, res) => {
 
@@ -206,7 +206,7 @@ router.post('/profile/remove-video-like', auth, (req, res) => {
 
   Utils.deleteVideoLike(user.uid, videoOwner, videoNumber)
   res.send('success')
-})
+});
 
 //Dislike video
 router.post('/profile/dislike-video', auth, (req, res) => {
@@ -223,7 +223,7 @@ router.post('/profile/dislike-video', auth, (req, res) => {
   Utils.dislikeVideo(user.uid, videoOwner, videoNumber)
   res.send('success')
 
-})
+});
 //Remove video dislike
 router.post('/profile/remove-video-dislike', auth, (req, res) => {
 
@@ -238,7 +238,7 @@ router.post('/profile/remove-video-dislike', auth, (req, res) => {
 
   Utils.deleteVideoDislike(user.uid, videoOwner, videoNumber)
   res.send('success')
-})
+});
 
 //User likes video?
 router.post('/profile/likes-video', auth, (req, res) => {
@@ -252,7 +252,7 @@ router.post('/profile/likes-video', auth, (req, res) => {
   }
   Utils.likesVideo(user.uid, videoOwner, videoNumber).then(likes => res.send(likes))
   
-})
+});
 //User dislikes video
 router.post('/profile/dislikes-video', auth, (req, res) => {
   const user = req.user
@@ -265,18 +265,19 @@ router.post('/profile/dislikes-video', auth, (req, res) => {
   }
   Utils.dislikesVideo(user.uid, videoOwner, videoNumber).then(likes => res.send(likes))
   
-})
+});
 
 //Users from name
 router.post('/profile/users-from-name', auth, (req, res) => {
   const text = req.headers.text
+  
   if (text == undefined) {
     res.send('error')
     return
   }
 
-  Utils.usersFromName(text).then(users => res.send(users))
-})
+  Utils.usersFromName(text).then(users => res.send(users.filter(user => user.type == "artist")))
+});
 
 //Admire user
 router.post('/profile/admire', auth, (req, res) => {
@@ -289,7 +290,7 @@ router.post('/profile/admire', auth, (req, res) => {
 
   Utils.admire(req.user.uid, admireIdentifier).then(() => res.send('success'))
 
-})
+});
 
 router.post('/profile/remove-admire', auth, (req, res) => {
 
@@ -301,7 +302,7 @@ router.post('/profile/remove-admire', auth, (req, res) => {
 
   Utils.removeAdmire(req.user.uid, admireIdentifier).then(() => res.send('success'))
   
-})
+});
 
 
   router.post('/profile/upload', auth , (req,res)=>{

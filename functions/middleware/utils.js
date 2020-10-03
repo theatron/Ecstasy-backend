@@ -205,14 +205,14 @@ class Utils {
             return []
         } 
         const snapshot = await ref.once('value')
-        console.log(snapshot.val())
+        
         return snapshot.val()
     }
     
     static async friendVideos(userIdentifier) {
         var videos = []
         const loadedFriendsIdentifier = await Utils.friendsIdentifier(userIdentifier)
-        console.log(loadedFriendsIdentifier, loadedFriendsIdentifier.length)
+        
         for (var index in loadedFriendsIdentifier) {
             const newVideos = await Utils.videosFromUser(loadedFriendsIdentifier[index])
             newVideos.forEach(video => {
@@ -334,7 +334,9 @@ class Utils {
     static async usersFromName(name) {
         var users = []
         const ref = firebase.admin.database().ref('USER').orderByChild('name').startAt(name).endAt(name + '\uf8ff')
+        
         const snapshot = await ref.once('value')
+        
         snapshot.forEach(childSnapshot => {
             var user = childSnapshot.toJSON()
             user.id = childSnapshot.key
