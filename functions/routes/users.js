@@ -304,6 +304,17 @@ router.post('/profile/remove-admire', auth, (req, res) => {
   
 });
 
+router.post('/profile/videos-from-name', auth, (req, res) => {
+  const text = req.headers.text
+  
+  if (text == undefined) {
+    res.send('error')
+    return
+  }
+
+  Utils.videosFromName(text, req.user.uid).then(videos => res.send(videos))
+})
+
 
   router.post('/profile/upload', auth , (req,res)=>{
     // req.get('Content-Type');

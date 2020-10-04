@@ -90,18 +90,3 @@ Search users by name
 #### Header:
 - text: `user's name query`
 
-## /profile/admire
-Admire user
-#### Header:
-- user: `user's identifier to admire`
-
-## /profile/remove-admire
-Remove user admire
-#### Header:
-- user: `user's identifier`
-
-## /profile/videos-from-name
-Search videos by title
-#### Header:
-- text: `video's title query`
-

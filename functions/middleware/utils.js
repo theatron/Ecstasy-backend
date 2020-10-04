@@ -386,6 +386,30 @@ class Utils {
         }
         admiringCountRef.update({"admirerscount": String(count - 1)})
     }
+
+    static async videosFromName(title, currentUser) {
+        const name = title.toLowerCase()
+        var videos = []
+        const snapshot = await firebase.admin.database().ref('USER').once('value')
+        snapshot.forEach(snapshot => {
+            const videolist = snapshot.toJSON().videolist
+            if (videolist != undefined) {
+                for (var element in videolist) {
+                    const video = videolist[element]
+                    const title = video.title.toLowerCase()
+                    if (title.startsWith(name)) {
+                        videos.push(video)
+                    }
+                }
+                
+            }
+            
+        })
+        //.orderByChild('videolist').startAt(name).endAt(name + '\uf8ff')
+        
+    
+        return videos
+    }
 }
 
 module.exports = { Utils }
