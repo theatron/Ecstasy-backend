@@ -38,6 +38,6 @@ const users = require('./routes/users');
 app1.use(users);
 
 
-exports.app = functions.https.onRequest(app1);
+exports.app1 = functions.https.onRequest(app1);
 
 

@@ -9,6 +9,7 @@ const auth = require('../middleware/auth');
 const os = require('os');
 const path = require('path');
 const ffmpeg = require('fluent-ffmpeg');
+const { compressAndUploadVideo,MRSUploadData } = require("../config/modules");
 // const { compressVideo } = require("../config/modules");
 
 
@@ -32,70 +33,30 @@ router.post('/profile', auth ,  async (req,res)=>{
 });
 
 
+//Video Uploading route
 router.post('/profile/upload', auth , (req,res)=>{
 
-  var metadata = {
-    contentType: 'video/mp4',
-  }
-
   const userName = req.user.displayName;
+  const id = req.user.uid;
 
+  console.log(userName,id);
   const Busboy = require('busboy');
-  
   const busboy = new Busboy({headers: req.headers});
 
-  const blob = bucket.file('videos/'+userName+Date.now());
-  const blobStream = blob.createWriteStream({
-    metadata
-  });
+  
 
 
   busboy.on('file', async (fieldname, file, filename) => {
-    var child_process = require('child_process');
+    const url = await compressAndUploadVideo(file,userName);
 
-    var args = [
-      '-i', 'pipe:0',
-      '-f', 'mp4',
-      '-movflags', 'frag_keyframe+empty_moov',
-      '-vcodec', 'libx265',
-      '-preset', 'veryfast',
-      '-crf', '28',
-      'pipe:1',
-    ]; 
-    
-    const ffmpeg = child_process.spawn('ffmpeg', args);
-    file.pipe(ffmpeg.stdin);
-    ffmpeg.stdout.pipe(blobStream);
-
+    console.log(url);
+    await MRSUploadData(url,id,userName);
    
-    ffmpeg.on('error', function (err) {
-      console.log(err);
-  });
-  
-  ffmpeg.on('close', function (code) {
-      console.log('ffmpeg exited with code ' + code);
-  });
-  
-  ffmpeg.stderr.on('data', function (data) {
-      // console.log('stderr: ' + data);
-      var tData = data.toString('utf8');
-      // var a = tData.split('[\\s\\xA0]+');
-      var a = tData.split('\n');
-      console.log(a);
-  });
-  
-  ffmpeg.stdout.on('data', function (data) {
-      var frame = new Buffer(data).toString('base64');
-      // console.log(frame);
-  });
-
+    console.log('data added');
     
 });
     
       
-
-    res.send('success');
-
   // Triggered once all uploaded files are processed by Busboy.
   // We still need to wait for the disk writes (saves) to complete.
   busboy.on('finish', async () => {
@@ -103,8 +64,7 @@ router.post('/profile/upload', auth , (req,res)=>{
   });
 
   busboy.end(req.rawBody);
-  console.log('File uploaded');
-
+  res.send('success');
  
 });
 
