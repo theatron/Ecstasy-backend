@@ -2,6 +2,9 @@
 
 In some days there will be a proper instruction how to implement the backend for mobile platform
 
+Every request's header must include Bearer token:
+- `Authorization`: 'Bearer `accessToken`'
+
 ## /profile/edit
 Deny friend request.
 #### Header:
@@ -104,4 +107,11 @@ Remove user admire
 Search videos by title
 #### Header:
 - text: `video's title query`
+
+## /profile/login
+Login or create new user
+#### Header:
+- name: `user's name`
+- type: `user's type`
+- photourl: `photo url` (optional)
 
