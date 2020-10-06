@@ -4,7 +4,6 @@ var https = require('follow-redirects').https;
 
 function postSilentNotification(userID, title, body) {
   
-  
   var options = {
     'method': 'POST',
     'hostname': 'fcm.googleapis.com',

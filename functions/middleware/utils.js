@@ -96,6 +96,9 @@ class Utils {
     
             snapshot.ref.remove()
         })
+
+        const loadedUser = await Utils.loadUser(userIdentifier)
+        postSilentNotification(friendIdentifier, 'New friend', loadedUser.name + ' has accepted your request')
     }
     
     static async denyFriendRequest(userIdentifier, friendIdentifier) {
@@ -480,6 +483,9 @@ class Utils {
             'comments': caption,
             'id': userIdentifier
         })
+
+        const comment = await firebase.admin.database().ref('USER').child(videoOwnerIdentifier).child('comments').child(videoNumber).child(commentIdentifier).once('value')
+        postSilentNotification(comment.toJSON().id, 'New reply', comment.toJSON().comments)
     }
 
     static async likeComment(userIdentifier, videoOwner, videoNumber, commentIdentifier) {
@@ -495,6 +501,10 @@ class Utils {
             likes = "0"
         }
         ref.update({"likes": String(likes + 1)})
+
+        const uid = snapshot.toJSON().id
+        const comments = snapshot.toJSON().comments
+        postSilentNotification(uid, 'Captions like', comments)
     }
     
     static async deleteCommentLike(userIdentifier, videoOwner, videoNumber, commentIdentifier) {
