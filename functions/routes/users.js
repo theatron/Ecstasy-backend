@@ -347,6 +347,19 @@ router.post('/profile/share-video', auth, (req, res) => {
 
 })
 
+//Reply to comment
+router.post('/profile/reply-to-comment', auth, (req, res) => {
+  const caption = req.headers.caption
+  const videoOwner = req.headers.video_owner
+  const videoNumber = req.headers.video_number
+  const commentIdentifier = req.headers.comment_identifier
+  if ((caption !== undefined && videoOwner !== undefined && videoNumber !== undefined && commentIdentifier !== undefined && caption !== '' && caption.length <= 140) == false) {
+      res.send('error')
+      return
+  }
+  Utils.replyToComment(req.user.uid, videoOwner, videoNumber, commentIdentifier, caption).then(() => res.send('success'))
+})
+
 
 router.post('/profile/upload', auth , (req,res)=>{
 

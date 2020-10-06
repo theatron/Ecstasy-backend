@@ -474,6 +474,14 @@ class Utils {
         sharesCountRef.update({'shares': String(sharesCount + 1)})
     }
 
+    static async replyToComment(userIdentifier, videoOwnerIdentifier, videoNumber, commentIdentifier, caption) {
+        const ref = firebase.admin.database().ref('USER').child(videoOwnerIdentifier).child('comments').child(videoNumber).child(commentIdentifier).child('subcomments')
+        ref.push({
+            'comments': caption,
+            'id': userIdentifier
+        })
+    }
+
 }
 
 module.exports = { Utils }
