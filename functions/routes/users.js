@@ -347,6 +347,19 @@ router.post('/profile/share-video', auth, (req, res) => {
 
 })
 
+//Load video comments
+router.post('/profile/video-comments', auth, (req, res) => {
+  const videoOwner = req.headers.video_owner
+  const videoNumber = req.headers.video_number
+
+  if (videoOwner == undefined || videoNumber == undefined) {
+    res.send('error')
+    return
+  }
+
+  Utils.loadVideoComments(videoOwner, videoNumber).then(comments => res.send(comments))
+})
+
 //Reply to comment
 router.post('/profile/reply-to-comment', auth, (req, res) => {
   const caption = req.headers.caption

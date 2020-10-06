@@ -579,6 +579,14 @@ class Utils {
     
     }
 
+    static async loadVideoComments(videoOwner, videoNumber) {
+        const ref = firebase.admin.database().ref('USER').child(videoOwner).child('comments').child(videoNumber)
+        const snapshot = await ref.once('value')
+        var comments = []
+        snapshot.forEach(child => comments.push(child.toJSON()))
+        return comments
+    }
+
 }
 
 module.exports = { Utils }

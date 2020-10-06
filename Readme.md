@@ -172,3 +172,9 @@ Check if user dislikes comment
 - video_number: `video number`
 - comment_identifier: `comment_identifier`
 
+## /profile/video-comments
+Load video comments
+#### Header:
+- video_owner: `video owner identifier`
+- video_number: `video number`
+
