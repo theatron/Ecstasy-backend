@@ -115,3 +115,10 @@ Login or create new user
 - type: `user's type`
 - photourl: `photo url` (optional)
 
+## /profile/share-video
+Share video with caption
+#### Header:
+- video_owner: `video owner identifier`
+- video_number: `video number`
+- caption: `caption` (maximum 140 characters)
+

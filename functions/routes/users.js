@@ -309,6 +309,7 @@ router.post('/profile/admire', auth, (req, res) => {
 
 });
 
+//Remove admire
 router.post('/profile/remove-admire', auth, (req, res) => {
 
   const admireIdentifier = req.headers.user
@@ -321,6 +322,7 @@ router.post('/profile/remove-admire', auth, (req, res) => {
   
 });
 
+//Search videos by name
 router.post('/profile/videos-from-name', auth, (req, res) => {
   const text = req.headers.text
   
@@ -332,11 +334,12 @@ router.post('/profile/videos-from-name', auth, (req, res) => {
   Utils.videosFromName(text, req.user.uid).then(videos => res.send(videos))
 })
 
+//Share video with caption
 router.post('/profile/share-video', auth, (req, res) => {
   const caption = req.headers.caption
   const videoOwner = req.headers.video_owner
   const videoNumber = req.headers.video_number
-  if ((caption !== undefined && videoOwner !== undefined && videoNumber !== undefined && caption !== '' && caption.length <= 500) == false) {
+  if ((caption !== undefined && videoOwner !== undefined && videoNumber !== undefined && caption !== '' && caption.length <= 140) == false) {
       res.send('error')
       return
   }
