@@ -1,7 +1,7 @@
 
 const { userRecordConstructor, user } = require('firebase-functions/lib/providers/auth');
 const firebase = require('./firebaseFunc.js');
-const { sendNotification } = require('./notifications');
+const { sendNotification, postSilentNotification } = require('./notifications');
 
 
 class Utils {
@@ -62,8 +62,9 @@ class Utils {
             newRef.set(body)
         })
 
-        sendNotification('Friend request', 'You got a new friend request from ' + user.name, friendIdentifier, user.photourl)
-    
+        //sendNotification('Friend request', 'You got a new friend request from ' + user.name, friendIdentifier, user.photourl)
+        postSilentNotification(friendIdentifier, 'Friend request', 'You got a new friend request from ' + user.name)
+
         return friend
     }
     
@@ -451,6 +452,26 @@ class Utils {
     static async updateUser(id, type) {
         const ref = firebase.admin.database().ref('USER').child(id)
         ref.update({'type': type})
+    }
+
+    static async shareVideo(userIdentifier, videoOwnerIdentifier, videoNumber, caption) {
+        const ownerRef = firebase.admin.database().ref('USER').child(videoOwnerIdentifier)
+        const sharedByRef = ownerRef.child('sharedby').child(videoNumber)
+        sharedByRef.push().set(userIdentifier)
+
+        const commentsRef = ownerRef.child('comments').child(videoNumber)
+        
+        commentsRef.push({
+            'comments': caption,
+            'dislikes': '0',
+            'id': userIdentifier,
+            'likes': '0'
+        })
+
+        const sharesCountRef = ownerRef.child('videolist').child(videoNumber)
+        const countSnapshot = await sharesCountRef.once('value')
+        const sharesCount = Number(countSnapshot.toJSON().shares)
+        sharesCountRef.update({'shares': String(sharesCount + 1)})
     }
 
 }

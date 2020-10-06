@@ -332,6 +332,18 @@ router.post('/profile/videos-from-name', auth, (req, res) => {
   Utils.videosFromName(text, req.user.uid).then(videos => res.send(videos))
 })
 
+router.post('/profile/share-video', auth, (req, res) => {
+  const caption = req.headers.caption
+  const videoOwner = req.headers.video_owner
+  const videoNumber = req.headers.video_number
+  if ((caption !== undefined && videoOwner !== undefined && videoNumber !== undefined && caption !== '' && caption.length <= 500) == false) {
+      res.send('error')
+      return
+  }
+  Utils.shareVideo(req.user.uid, videoOwner, videoNumber, caption).then(() => res.send('success'))
+
+})
+
 
 router.post('/profile/upload', auth , (req,res)=>{
 
