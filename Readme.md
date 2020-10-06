@@ -130,3 +130,45 @@ Share video with caption
 - comment_identifier: `comment_identifier`
 - caption: `caption` (maximum 140 characters)
 
+## /profile/like-comment
+Like comment
+#### Header:
+- video_owner: `video owner identifier`
+- video_number: `video number`
+- comment_identifier: `comment_identifier`
+
+## /profile/remove-comment-like
+Like comment
+#### Header:
+- video_owner: `video owner identifier`
+- video_number: `video number`
+- comment_identifier: `comment_identifier`
+
+## /profile/dislike-comment
+Dislike comment
+#### Header:
+- video_owner: `video owner identifier`
+- video_number: `video number`
+- comment_identifier: `comment_identifier`
+
+## /profile/remove-comment-dislike
+Remove comment like
+#### Header:
+- video_owner: `video owner identifier`
+- video_number: `video number`
+- comment_identifier: `comment_identifier`
+
+## /profile/likes-comment
+Check if user likes comment
+#### Header:
+- video_owner: `video owner identifier`
+- video_number: `video number`
+- comment_identifier: `comment_identifier`
+
+## /profile/dislikes-comment
+Check if user dislikes comment
+#### Header:
+- video_owner: `video owner identifier`
+- video_number: `video number`
+- comment_identifier: `comment_identifier`
+

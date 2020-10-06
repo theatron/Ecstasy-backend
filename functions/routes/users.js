@@ -360,6 +360,105 @@ router.post('/profile/reply-to-comment', auth, (req, res) => {
   Utils.replyToComment(req.user.uid, videoOwner, videoNumber, commentIdentifier, caption).then(() => res.send('success'))
 })
 
+//Like comment
+router.post('/profile/like-comment', auth, (req, res) => {
+
+  const user = req.user
+  const videoOwner = req.headers.video_owner
+  const videoNumber = req.headers.video_number
+  const commentIdentifier = req.headers.comment_identifier
+  
+  if (videoOwner == undefined || videoNumber == undefined || commentIdentifier == undefined) {
+    res.send('error')
+    return
+  }
+
+  Utils.likeComment(user.uid, videoOwner, videoNumber, commentIdentifier)
+  res.send('success')
+
+});
+//Remove comment like
+router.post('/profile/remove-comment-like', auth, (req, res) => {
+
+  const user = req.user
+  const videoOwner = req.headers.video_owner
+  const videoNumber = req.headers.video_number
+  const commentIdentifier = req.headers.comment_identifier
+
+  if (videoOwner == undefined || videoNumber == undefined || commentIdentifier == undefined) {
+    res.send('error')
+    return
+  }
+
+  Utils.deleteCommentLike(user.uid, videoOwner, videoNumber, commentIdentifier)
+  res.send('success')
+});
+
+//Dislike comment
+router.post('/profile/dislike-comment', auth, (req, res) => {
+
+  const user = req.user
+  const videoOwner = req.headers.video_owner
+  const videoNumber = req.headers.video_number
+  const commentIdentifier = req.headers.comment_identifier
+
+  if (videoOwner == undefined || videoNumber == undefined || commentIdentifier == undefined) {
+    res.send('error')
+    return
+  }
+
+  Utils.dislikeComment(user.uid, videoOwner, videoNumber, commentIdentifier)
+  res.send('success')
+
+});
+//Remove comment dislike
+router.post('/profile/remove-comment-dislike', auth, (req, res) => {
+
+  const user = req.user
+  const videoOwner = req.headers.video_owner
+  const videoNumber = req.headers.video_number
+  const commentIdentifier = req.headers.comment_identifier
+  
+  if (videoOwner == undefined || videoNumber == undefined || commentIdentifier == undefined) {
+    res.send('error')
+    return
+  }
+
+  Utils.deleteCommentDislike(user.uid, videoOwner, videoNumber, commentIdentifier)
+  res.send('success')
+});
+
+//User likes comment?
+router.post('/profile/likes-comment', auth, (req, res) => {
+  const user = req.user
+  const videoOwner = req.headers.video_owner
+  const videoNumber = req.headers.video_number
+  const commentIdentifier = req.headers.comment_identifier
+  
+  if (videoOwner == undefined || videoNumber == undefined || commentIdentifier == undefined) {
+    res.send('error')
+    return
+  }
+
+  Utils.likesComment(user.uid, videoOwner, videoNumber, commentIdentifier).then(likes => res.send(likes))
+  
+});
+//User dislikes comment
+router.post('/profile/dislikes-comment', auth, (req, res) => {
+  const user = req.user
+  const videoOwner = req.headers.video_owner
+  const videoNumber = req.headers.video_number
+  const commentIdentifier = req.headers.comment_identifier
+  
+  if (videoOwner == undefined || videoNumber == undefined || commentIdentifier == undefined) {
+    res.send('error')
+    return
+  }
+
+  Utils.dislikesComment(user.uid, videoOwner, videoNumber, commentIdentifier).then(likes => res.send(likes))
+  
+});
+
 
 router.post('/profile/upload', auth , (req,res)=>{
 

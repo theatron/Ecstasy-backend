@@ -482,6 +482,103 @@ class Utils {
         })
     }
 
+    static async likeComment(userIdentifier, videoOwner, videoNumber, commentIdentifier) {
+        
+        const ref = firebase.admin.database().ref('USER').child(videoOwner).child('comments').child(videoNumber).child(commentIdentifier)
+        const likeDislike = ref.child('likedby')
+        likeDislike.push().set({"id": userIdentifier})
+    
+        //const likeRef = userRef.child('videolist').child(String(videoNumber))
+        const snapshot = await ref.once('value')
+        var likes = Number(snapshot.toJSON().likes)
+        if (likes == undefined) {
+            likes = "0"
+        }
+        ref.update({"likes": String(likes + 1)})
+    }
+    
+    static async deleteCommentLike(userIdentifier, videoOwner, videoNumber, commentIdentifier) {
+        
+        const ref = firebase.admin.database().ref('USER').child(videoOwner).child('comments').child(videoNumber).child(commentIdentifier)
+        const likeDislike = ref.child('likedby').orderByChild('id').equalTo(userIdentifier)
+        const likeDislikeSnapshot = await likeDislike.once('child_added')
+        likeDislikeSnapshot.ref.remove()
+    
+        const snapshot = await ref.once('value')
+        var likes = Number(snapshot.toJSON().likes)
+        if (likes == undefined) {
+            likes = "1"
+        }
+        ref.update({"likes": String(likes - 1)})
+    }
+    
+    static async dislikeComment(userIdentifier, videoOwner, videoNumber, commentIdentifier) {
+        
+        const ref = firebase.admin.database().ref('USER').child(videoOwner).child('comments').child(videoNumber).child(commentIdentifier)
+        const likeDislike = ref.child('dislikedby')
+        likeDislike.push().set({"id": userIdentifier})
+    
+        const snapshot = await ref.once('value')
+        var dislikes = Number(snapshot.toJSON().dislikes)
+        if (dislikes == undefined) {
+            dislikes = "0"
+        }
+        ref.update({"dislikes": String(dislikes + 1)})
+    }
+    
+    static async deleteCommentDislike(userIdentifier, videoOwner, videoNumber, commentIdentifier) {
+        
+        const ref = firebase.admin.database().ref('USER').child(videoOwner).child('comments').child(videoNumber).child(commentIdentifier)
+        const likeDislike = ref.child('dislikedby').orderByChild('id').equalTo(userIdentifier)
+        const likeDislikeSnapshot = await likeDislike.once('child_added')
+        likeDislikeSnapshot.ref.remove()
+    
+        const snapshot = await ref.once('value')
+        var dislikes = Number(snapshot.toJSON().dislikes)
+        if (dislikes == undefined) {
+            dislikes = "1"
+        }
+        ref.update({"dislikes": String(dislikes - 1)})
+    }
+    
+    static async likesComment(userIdentifier, videoOwner, videoNumber, commentIdentifier) {
+        const ref = firebase.admin.database().ref('USER').child(videoOwner).child('comments').child(videoNumber).child(commentIdentifier).child('likedby')
+        if (ref.exists == false) {
+            return false
+        }
+        const snapshot = await ref.once('value')
+        const values = snapshot.val()
+
+        for (var index in values) {
+            const child = values[index]
+
+            if (child.id == userIdentifier) {
+                return true
+            }
+        }
+        return false
+    
+    }
+    
+    static async dislikesComment(userIdentifier, videoOwner, videoNumber, commentIdentifier) {
+        const ref = firebase.admin.database().ref('USER').child(videoOwner).child('comments').child(videoNumber).child(commentIdentifier).child('dislikedby')
+        if (ref.exists == false) {
+            return false
+        }
+        const snapshot = await ref.once('value')
+        const values = snapshot.val()
+    
+        for (var index in values) {
+            const child = values[index]
+
+            if (child.id == userIdentifier) {
+                return true
+            }
+        }
+        return false
+    
+    }
+
 }
 
 module.exports = { Utils }
