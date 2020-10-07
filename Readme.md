@@ -178,3 +178,13 @@ Load video comments
 - video_owner: `video owner identifier`
 - video_number: `video number`
 
+## /profile/user-from-id
+Load user from id
+#### Header:
+- id: `user's identifier`
+
+## /profile/videos-from-id
+Load videos from id
+
+
+

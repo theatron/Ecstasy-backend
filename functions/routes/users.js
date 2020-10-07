@@ -15,6 +15,7 @@ const { user } = require("firebase-functions/lib/providers/auth");
 const { Utils } = require('../middleware/utils')
 const { resourceUsage } = require("process");
 const { ESRCH } = require("constants");
+const { runInContext } = require("vm");
 
 
 //Routes
@@ -36,6 +37,18 @@ router.post('/login', auth, async(req, res) => {
   }
 
   Utils.login(userID, type, name, photourl).then(() => res.send('success'))
+
+})
+
+router.post('/profile/user-from-id', auth, (req, res) => {
+
+  const id = req.headers.id
+  if (id == undefined) {
+    res.send('error')
+    return
+  }
+
+  Utils.loadUser(id).then(user => res.send(user))
 
 })
 router.post('/profile', auth ,  async (req,res)=>{
@@ -174,16 +187,19 @@ router.post('/profile/accept-friend', auth, (req, res) => {
   Utils.acceptFriendRequest(req.user.uid, friendIdentifier).then(() => { res.send('success') })
 });
 
+
+
 //Deny friend request
 router.post('/profile/deny-friend', auth, (req, res) => {
+  console.log('deny friend')
   const friendIdentifier = req.headers.friend
   if (friendIdentifier == undefined) {
     res.send('error')
     return
   }
-
   Utils.denyFriendRequest(req.user.uid, friendIdentifier).then(() => { res.send('success') })
 });
+
 
 //Thumbnail
 router.post('/profile/thumbnail', auth, (req, res) => {
@@ -334,12 +350,17 @@ router.post('/profile/videos-from-name', auth, (req, res) => {
   Utils.videosFromName(text, req.user.uid).then(videos => res.send(videos))
 })
 
+router.post('/profile/videos-from-id', auth, (req, res) => {
+  Utils.videosFromUser(req.user.uid).then(videos => res.send(videos))
+})
+
 //Share video with caption
 router.post('/profile/share-video', auth, (req, res) => {
   const caption = req.headers.caption
   const videoOwner = req.headers.video_owner
   const videoNumber = req.headers.video_number
-  if ((caption !== undefined && videoOwner !== undefined && videoNumber !== undefined && caption !== '' && caption.length <= 140) == false) {
+  const commentIdentifier = req.headers.comment_identifier
+  if ((commentIdentifier !== un && caption !== undefined && videoOwner !== undefined && videoNumber !== undefined && caption !== '' && caption.length <= 140) == false) {
       res.send('error')
       return
   }

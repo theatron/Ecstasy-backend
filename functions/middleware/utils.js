@@ -212,8 +212,7 @@ class Utils {
             return []
         } 
         const snapshot = await ref.once('value')
-        
-        return snapshot.val()
+        return snapshot
     }
     
     static async friendVideos(userIdentifier) {
@@ -229,11 +228,47 @@ class Utils {
     
         return videos
     }
+
+    static async loadAdmiringIdentifier(userIdentifier) {
+        const ref = firebase.admin.database().ref('USER').child(userIdentifier).child('admiring')
+        
+        if (ref.exists == false) {
+            return []
+        }
+        const snapshot = await ref.once('value')
+    
+        const admirings = snapshot.val()
+        if (admirings == undefined) {
+            return []
+        }
+        //Extract friends' identifier
+        const identifiers = admirings.map(value => value.id)
+        return identifiers
+    }
+
+    static async admiringVideos(userIdentifier) {
+        var videos = []
+        const identifier = await Utils.loadAdmiringIdentifier(userIdentifier)
+
+        for (var index in identifier) {
+            const newVideos = await Utils.videosFromUser(identifier[index])
+            newVideos.forEach(video => {
+                videos.push(video)
+            })
+        }
+    
+        return videos
+    }
     
     static async loadThumbnail(userIdentifier) {
         var videos = []
         const friendLoadedVideos = await Utils.friendVideos(userIdentifier)
+        const admiringVideos = await Utils.admiringVideos(userIdentifier)
         friendLoadedVideos.forEach(video => {
+            videos.push(video)
+        })
+
+        admiringVideos.forEach(video => {
             videos.push(video)
         })
     
@@ -457,10 +492,10 @@ class Utils {
         ref.update({'type': type})
     }
 
-    static async shareVideo(userIdentifier, videoOwnerIdentifier, videoNumber, caption) {
+    static async shareVideo(userIdentifier, videoOwnerIdentifier, videoNumber, caption, commentIdentifier) {
         const ownerRef = firebase.admin.database().ref('USER').child(videoOwnerIdentifier)
-        const sharedByRef = ownerRef.child('sharedby').child(videoNumber)
-        sharedByRef.push().set(userIdentifier)
+        const sharedByRef = ownerRef.child('sharedby').child(videoNumber).child(commentIdentifier)
+        sharedByRef.set(userIdentifier)
 
         const commentsRef = ownerRef.child('comments').child(videoNumber)
         
@@ -593,7 +628,12 @@ class Utils {
         const ref = firebase.admin.database().ref('USER').child(videoOwner).child('comments').child(videoNumber)
         const snapshot = await ref.once('value')
         var comments = []
-        snapshot.forEach(child => comments.push(child.toJSON()))
+        snapshot.forEach(child => {
+            var comment = childSnapshot.toJSON()
+            comment.commentID = child.key
+
+            comments.push(comment)
+        })
         return comments
     }
 
