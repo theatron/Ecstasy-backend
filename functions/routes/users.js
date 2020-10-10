@@ -10,6 +10,7 @@ const os = require('os');
 const path = require('path');
 const ffmpeg = require('fluent-ffmpeg');
 const { compressAndUploadVideo,MRSUploadData } = require("../config/modules");
+const { inspect } = require("util");
 
 
 //Routes
@@ -34,38 +35,43 @@ router.post('/profile', auth ,  async (req,res)=>{
 
 //Video Uploading route
 router.post('/profile/upload', auth , (req,res)=>{
-
-  const userName = req.user.displayName;
-  const id = req.user.uid;
-  const title = req.title;
-  const desc = req.desc;
-
-  console.log(userName,id);
-  const Busboy = require('busboy');
-  const busboy = new Busboy({headers: req.headers});
-
-  
+  try{
+    const userName = req.user.displayName;
+    const id = req.user.uid;
 
 
-  busboy.on('file', async (fieldname, file, filename) => {
-    const url = await compressAndUploadVideo(file,userName);
+    const Busboy = require('busboy');
+    const busboy = new Busboy({headers: req.headers});
 
-    console.log(url);
-    await MRSUploadData(url,id,userName,title,desc);
-   
-    console.log('data added');
+    var title,desc,url;
     
-});
+
+
+    busboy.on('file', async (fieldname, file, filename) => {
+      url = await compressAndUploadVideo(file,userName);
+    });
     
+    busboy.on('field',async (fieldname,value)=>{
       
-  // Triggered once all uploaded files are processed by Busboy.
-  // We still need to wait for the disk writes (saves) to complete.
-  busboy.on('finish', async () => {
-    console.log('upload done');
-  });
+      if(fieldname==='title'){
+        title = value;
+      }else{
+        desc = value;
+      }
+      
+    });
 
-  busboy.end(req.rawBody);
-  res.send('success');
+    
+    busboy.on('finish', async () => {
+      await MRSUploadData(url,id,userName,title,desc);
+    });
+
+    busboy.end(req.rawBody);
+    res.send('success');
+
+}catch(e){
+  console.log(e);
+}
  
 });
 
