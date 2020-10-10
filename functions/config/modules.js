@@ -1,13 +1,15 @@
-const { time } = require('console');
 const admin = require('firebase-admin');
 var bucket = admin.storage().bucket();
 const fs = require('fs');
+const { title } = require('process');
 
+
+
+//uploading video and saving it to the database 
 const compressAndUploadVideo = async (file,userName) => {
     var metadata = {
       contentType: 'video/mp4',
     }
-
     
     const blob =  bucket.file('videos/'+userName);
     const blobStream = blob.createWriteStream({
@@ -62,9 +64,10 @@ const compressAndUploadVideo = async (file,userName) => {
   }
 
 
-  const MRSUploadData = async (url,id,userName)=>{
+  const MRSUploadData = async (url,id,userName,title,desc)=>{
     await admin.database().ref('PENDING_VIDEOS/'+id).set({
-      desc:'test',
+      title:title,
+      desc:desc,
       dislikes:0,
       id:id,
       likes:0,
@@ -81,6 +84,13 @@ const compressAndUploadVideo = async (file,userName) => {
       }
     });
   }
+
+  //Pending until AI implementation 
+  // const pushVideostoDB = async (req,res)=>{
+  //   const id = req.user.uid;
+
+  //   await admin.database().ref('PENDING_VIDEOS'+id).remove();
+  // }
 
   
 module.exports = {

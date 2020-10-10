@@ -10,7 +10,6 @@ const os = require('os');
 const path = require('path');
 const ffmpeg = require('fluent-ffmpeg');
 const { compressAndUploadVideo,MRSUploadData } = require("../config/modules");
-// const { compressVideo } = require("../config/modules");
 
 
 //Routes
@@ -38,6 +37,8 @@ router.post('/profile/upload', auth , (req,res)=>{
 
   const userName = req.user.displayName;
   const id = req.user.uid;
+  const title = req.title;
+  const desc = req.desc;
 
   console.log(userName,id);
   const Busboy = require('busboy');
@@ -50,7 +51,7 @@ router.post('/profile/upload', auth , (req,res)=>{
     const url = await compressAndUploadVideo(file,userName);
 
     console.log(url);
-    await MRSUploadData(url,id,userName);
+    await MRSUploadData(url,id,userName,title,desc);
    
     console.log('data added');
     
@@ -68,7 +69,7 @@ router.post('/profile/upload', auth , (req,res)=>{
  
 });
 
-  
+
 
   
 //Exports
