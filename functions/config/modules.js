@@ -1,6 +1,7 @@
 const admin = require('firebase-admin');
 var bucket = admin.storage().bucket();
 const fs = require('fs');
+const functions = require('firebase-functions');
 
 
 
@@ -61,7 +62,6 @@ const compressAndUploadVideo = async (file,userName) => {
     return url[0];
 
   }
-
 
   const MRSUploadData = async (url,id,userName,title,desc)=>{
     

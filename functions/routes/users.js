@@ -35,6 +35,7 @@ router.post('/profile', auth ,  async (req,res)=>{
 
 //Video Uploading route
 router.post('/profile/upload', auth , (req,res)=>{
+  
   try{
     const userName = req.user.displayName;
     const id = req.user.uid;
@@ -76,6 +77,26 @@ router.post('/profile/upload', auth , (req,res)=>{
 });
 
 
+//MRS
+router.post('/push/to/videos', auth ,async (req,res,next)=>{
+    try{  
+      const id = req.user.uid;
+      var refer = admin.database().ref('PENDING_VIDEOS/'+id);
+    
+
+      await refer.once('value').then((snapshot)=> {
+        var data = snapshot.val();
+        data.status = 'approved';
+        admin.database().ref('Videos/'+id).set(data);
+      });
+
+      refer.remove();
+      
+      res.status(200).send('pushed to videos');
+    }catch(e){
+      res.status(400).send(e);
+    }
+});
 
   
 //Exports
