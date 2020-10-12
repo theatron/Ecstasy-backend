@@ -6,14 +6,15 @@ const functions = require('firebase-functions');
 
 
 //uploading video and saving it to the database 
-const compressAndUploadVideo = async (file,userName) => {
+const compressAndUploadVideo = async (file,userName,res) => {
     var metadata = {
       contentType: 'video/mp4',
     }
     
     const blob =  bucket.file('videos/'+userName);
     const blobStream = blob.createWriteStream({
-      metadata
+      metadata,
+      timeout: 1000 * 60 * 60
     });
 
     var child_process = require('child_process');
@@ -27,7 +28,7 @@ const compressAndUploadVideo = async (file,userName) => {
       '-crf', '28',
       'pipe:1',
     ]; 
-    
+  
     const ffmpeg = child_process.spawn('ffmpeg', args);
     await file.pipe(ffmpeg.stdin);
     ffmpeg.stdout.pipe(blobStream);
@@ -37,22 +38,11 @@ const compressAndUploadVideo = async (file,userName) => {
       console.log(err);
     });
 
-  ffmpeg.on('close', function (code) {
+    ffmpeg.on('close', function (code) {
       console.log('ffmpeg exited with code ' + code);
     });
 
-  ffmpeg.stderr.on('data', function (data) {
-      // console.log('stderr: ' + data);
-      var tData = data.toString('utf8');
-      // var a = tData.split('[\\s\\xA0]+');
-      var a = tData.split('\n');
-      console.log(a);
-    });
-
-  ffmpeg.stdout.on('data', function (data) {
-      var frame = new Buffer(data).toString('base64');
-      // console.log(frame);
-    });
+  
 
     const url = await  blob.getSignedUrl({
       action: 'read',
@@ -60,6 +50,7 @@ const compressAndUploadVideo = async (file,userName) => {
     })
 
     return url[0];
+    // res.send('done the uploading');
 
   }
 

@@ -8,9 +8,7 @@ const fs = require('fs');
 const auth = require('../middleware/auth');
 const os = require('os');
 const path = require('path');
-const ffmpeg = require('fluent-ffmpeg');
 const { compressAndUploadVideo,MRSUploadData } = require("../config/modules");
-const { inspect } = require("util");
 
 
 //Routes
@@ -22,7 +20,7 @@ router.post('/profile', auth ,  async (req,res)=>{
     try{
       const user = req.user;
       
-      res.status(200).send(user);
+      console.log(user);
       return user;
 
     }catch(e){
@@ -34,11 +32,11 @@ router.post('/profile', auth ,  async (req,res)=>{
 
 
 //Video Uploading route
-router.post('/profile/upload', auth , (req,res)=>{
+router.post('/profile/upload', auth , async (req,res)=>{
   
   try{
-    const userName = req.user.displayName;
-    const id = req.user.uid;
+    const userName = await req.user.displayName;
+    const id = await req.user.uid;
 
 
     const Busboy = require('busboy');
@@ -49,7 +47,8 @@ router.post('/profile/upload', auth , (req,res)=>{
 
 
     busboy.on('file', async (fieldname, file, filename) => {
-      url = await compressAndUploadVideo(file,userName);
+      url = await compressAndUploadVideo(file,userName,res);
+      console.log(url);
     });
     
     busboy.on('field',async (fieldname,value)=>{
@@ -68,7 +67,7 @@ router.post('/profile/upload', auth , (req,res)=>{
     });
 
     busboy.end(req.rawBody);
-    res.send('success');
+    console.log('success');
 
 }catch(e){
   console.log(e);
@@ -80,7 +79,7 @@ router.post('/profile/upload', auth , (req,res)=>{
 //MRS
 router.post('/push/to/videos', auth ,async (req,res,next)=>{
     try{  
-      const id = req.user.uid;
+      const id = await req.user.uid;
       var refer = admin.database().ref('PENDING_VIDEOS/'+id);
     
 
@@ -92,9 +91,9 @@ router.post('/push/to/videos', auth ,async (req,res,next)=>{
 
       refer.remove();
       
-      res.status(200).send('pushed to videos');
+      console.log('pushed to videos');
     }catch(e){
-      res.status(400).send(e);
+      console.log(e);
     }
 });
 
