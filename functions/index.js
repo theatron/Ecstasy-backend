@@ -37,12 +37,14 @@ const users = require('./routes/users');
 //Setting users routes
 app1.use(users);
 
-const runtimeOpts = {
-    timeoutSeconds: 540,
-    memory: '256MB'
-  }
+// const runtimeOpts = {
+//     timeoutSeconds: 540,
+//     memory: '256MB'
+  // }
 
-exports.app1 = functions.runWith(runtimeOpts).https.onRequest(app1);
+exports.app1 = functions
+// .runWith(runtimeOpts)
+.https.onRequest(app1);
 
 
 

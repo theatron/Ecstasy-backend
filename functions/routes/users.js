@@ -64,6 +64,7 @@ router.post('/profile/upload', auth , async (req,res)=>{
     
     busboy.on('finish', async () => {
       await MRSUploadData(url,id,userName,title,desc);
+      await res.status(201).send('File Uploaded');
     });
 
     busboy.end(req.rawBody);
