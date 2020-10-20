@@ -9,10 +9,12 @@ admin.initializeApp({
 });
 
 var db = admin.database();
+var storage = admin.storage()
 
 module.exports = {
     admin,
     db,
+    storage,
     serviceAccount,
     
 }
