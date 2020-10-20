@@ -5,6 +5,9 @@ In some days there will be a proper instruction how to implement the backend for
 Every request's header must include Bearer token:
 - `Authorization`: 'Bearer `accessToken`'
 
+## /profile
+Load authenticated user.
+
 ## /profile/edit
 Deny friend request.
 #### Header:
@@ -186,5 +189,15 @@ Load user from id
 ## /profile/videos-from-id
 Load videos from id
 
+## /profile/upload
+Upload video as mp4 with title and description
+#### Multi-form data:
+- file: `video(base 64)`
+- title: `video title`
+- desc: `video description`
 
+## /profile/picture
+Update user's profile image as png or jpeg
+#### Multi-form data:
+- file: `image(base 64)`
 

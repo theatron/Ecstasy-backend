@@ -16,6 +16,9 @@ const { Utils } = require('../middleware/utils')
 const { resourceUsage } = require("process");
 const { ESRCH } = require("constants");
 const { runInContext } = require("vm");
+const { response } = require("express");
+const { sendNotification, postSilentNotification } = require('../middleware/notifications');
+const { compressAndUploadVideo,MRSUploadData } = require("../config/modules");
 
 
 //Routes
@@ -56,27 +59,15 @@ router.post('/profile', auth ,  async (req,res)=>{
   const user = req.user
   
   Utils.loadUser(user.uid).then(user => { res.send(user) })
-  //   try{
-  //     const user = req.user;
-  //     //loadUser(user.uid)
-  //       //.then(user => { res.status(200).send(user) })
-  //     res.status(200).send(user)
-  //     return user;
-
-  //   }catch(e){
-  //     res.status(401).send();
-  //     console.log(e);
-  // }
-
 });
 
 router.post('/profile/edit', auth, (req, res) => {
   const headers = req.headers
   const name = headers.name
   const username = headers.username
-  const biography = headers.biography
-  const number = headers.phonenumber
-  const website = headers.website
+  const biography = headers.bio
+  const number = headers.number
+  const website = headers.web
   
   const ref = admin.database().ref().child("USER").child(req.user.uid)
   
@@ -309,7 +300,7 @@ router.post('/profile/users-from-name', auth, (req, res) => {
     return
   }
 
-  Utils.usersFromName(text).then(users => res.send(users.filter(user => user.type == "artist")))
+  Utils.usersFromName(text, req.user.uid).then(users => res.send(users.filter(user => user.type == "artist")))
 });
 
 //Admire user
@@ -360,11 +351,11 @@ router.post('/profile/share-video', auth, (req, res) => {
   const videoOwner = req.headers.video_owner
   const videoNumber = req.headers.video_number
   const commentIdentifier = req.headers.comment_identifier
-  if ((commentIdentifier !== un && caption !== undefined && videoOwner !== undefined && videoNumber !== undefined && caption !== '' && caption.length <= 140) == false) {
+  if ((commentIdentifier !== undefined && caption !== undefined && videoOwner !== undefined && videoNumber !== undefined && caption !== '' && caption.length <= 140) == false) {
       res.send('error')
       return
   }
-  Utils.shareVideo(req.user.uid, videoOwner, videoNumber, caption).then(() => res.send('success'))
+  Utils.shareVideo(req.user.uid, videoOwner, videoNumber, caption, commentIdentifier).then(() => res.send('success'))
 
 })
 
@@ -493,84 +484,152 @@ router.post('/profile/dislikes-comment', auth, (req, res) => {
   
 });
 
-
-router.post('/profile/upload', auth , (req,res)=>{
-
-  var metadata = {
-    contentType: 'video/mp4',
-  }
-
-  const userName = req.user.displayName;
-
-  const Busboy = require('busboy');
+//Video Uploading route
+router.post('/profile/upload', auth , async (req,res)=>{
   
-  const busboy = new Busboy({headers: req.headers});
-
-  const blob = bucket.file('videos/'+userName+Date.now());
-  const blobStream = blob.createWriteStream({
-    metadata
-  });
+  try{
+    const userName = await req.user.displayName;
+    const id = await req.user.uid;
 
 
-  busboy.on('file', async (fieldname, file, filename) => {
-    var child_process = require('child_process');
+    const Busboy = require('busboy');
+    const busboy = new Busboy({headers: req.headers});
 
-    var args = [
-      '-i', 'pipe:0',
-      '-f', 'mp4',
-      '-movflags', 'frag_keyframe+empty_moov',
-      '-vcodec', 'libx265',
-      '-preset', 'veryfast',
-      '-crf', '28',
-      'pipe:1',
-    ]; 
+    var title,desc,url;
     
-    const ffmpeg = child_process.spawn('ffmpeg', args);
-    file.pipe(ffmpeg.stdin);
-    ffmpeg.stdout.pipe(blobStream);
 
-   
-    ffmpeg.on('error', function (err) {
-      console.log(err);
-  });
-  
-  ffmpeg.on('close', function (code) {
-      console.log('ffmpeg exited with code ' + code);
-  });
-  
-  ffmpeg.stderr.on('data', function (data) {
-      // console.log('stderr: ' + data);
-      var tData = data.toString('utf8');
-      // var a = tData.split('[\\s\\xA0]+');
-      var a = tData.split('\n');
-      console.log(a);
-  });
-  
-  ffmpeg.stdout.on('data', function (data) {
-      var frame = new Buffer(data).toString('base64');
-      // console.log(frame);
-  });
 
+    busboy.on('file', async (fieldname, file, filename) => {
+      url = await compressAndUploadVideo(file,userName,res);
+      console.log(url);
+    });
     
-});
-    
+    busboy.on('field',async (fieldname,value)=>{
       
+      if(fieldname==='title'){
+        title = value;
+      }else{
+        desc = value;
+      }
+      
+    });
 
-    res.send('success');
+    
+    busboy.on('finish', async () => {
+      await MRSUploadData(url,id,userName,title,desc);
+      await res.status(201).send('File Uploaded');
+    });
 
-  // Triggered once all uploaded files are processed by Busboy.
-  // We still need to wait for the disk writes (saves) to complete.
-  busboy.on('finish', async () => {
-    console.log('upload done');
-  });
+    busboy.end(req.rawBody);
+    console.log('success');
 
-  busboy.end(req.rawBody);
-  console.log('File uploaded');
-
+}catch(e){
+  console.log(e);
+}
  
 });
 
-  
+
+//MRS
+router.post('/push/to/videos', auth ,async (req,res,next)=>{
+    try{  
+      const id = await req.user.uid;
+      var refer = admin.database().ref('PENDING_VIDEOS/'+id);
+    
+
+      await refer.once('value').then((snapshot)=> {
+        var data = snapshot.val();
+        data.status = 'approved';
+        var newRef = admin.database().ref('USER').child(id).child('videolist')
+        newRef.once('value').then(newSnapshot => {
+          newRef.child(String(newSnapshot.numChildren())).set(data)
+        })
+        
+      });
+
+      refer.remove();
+      
+      console.log('pushed to videos');
+    }catch(e){
+      console.log(e);
+    }
+});
+
+router.post('/mrs/pending-video', (req, res) => {
+  if (req.headers.token !== '858484') {
+    res.send('error')
+    return
+  }
+
+  Utils.pendingVideo().then(video => res.send(video))
+})
+const multer = require('multer');
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+      cb(null, '../uploads');
+  },
+  filename: (req, file, cb) => {
+      console.log(file);
+      console.log(path.extname(file.originalname))
+      cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype == 'image/jpeg' || file.mimetype == 'image/png') {
+      cb(null, true);
+  } else {
+      cb(null, false);
+  }
+}
+const upload = multer({ storage: storage, fileFilter: fileFilter });
+router.post('/profile/picture', auth, async (req, res, next) => {
+
+  const url = await Utils.updateImage(req)
+  console.log(url)
+  res.send(url)
+
+})
+
+
+
+
+//MRS
+router.post('/push/to/videos', auth ,async (req,res,next)=>{
+    try{  
+      const id = req.user.uid;
+      var refer = admin.database().ref('PENDING_VIDEOS/'+id);
+    
+
+      await refer.once('value').then((snapshot)=> {
+        var data = snapshot.val();
+        data.status = 'approved';
+        admin.database().ref('Videos/'+id).set(data);
+        
+      });
+
+      refer.remove();
+      console.log('title:', data, data.title)
+      res.status(200).send('pushed to videos');
+    }catch(e){
+      res.status(400).send(e);
+    }
+});
+
+router.post('/deny-video', auth, async (req, res) => {
+  const id = req.user.uid
+  const refer = admin.database().ref('PENDING_VIDEOS/').child(id)
+  const snapshot = await refer.once('value')
+  refer.remove()
+
+  res.send('success')
+})
+
+router.post('/pending-video', auth, async (req, res) => {
+  const id = req.user.uid
+  const refer = admin.database().ref('PENDING_VIDEOS/').child(id)
+  const snapshot = await refer.once('value')
+  res.send(snapshot.toJSON())
+})
 
   
 //Exports

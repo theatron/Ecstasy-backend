@@ -2,7 +2,12 @@
 const { userRecordConstructor, user } = require('firebase-functions/lib/providers/auth');
 const firebase = require('./firebaseFunc.js');
 const { sendNotification, postSilentNotification } = require('./notifications');
+const admin = require('firebase-admin');
+var bucket = admin.storage().bucket();
+//const storage = require('firebase/storage'); 
+//var storage = require('@google-cloud/storage')
 
+const { Storage } = require('@google-cloud/storage');
 
 class Utils {
     static async loadUser(identifier) {
@@ -158,16 +163,28 @@ class Utils {
     }
     
     static async friendsIdentifier(identifier) {
-        const ref = firebase.admin.database().ref().child("USER").child(identifier).child("friends")
+
+        const basicRef = firebase.admin.database().ref().child("USER").child(identifier)
+        const basicSnapshot = await basicRef.once('value')
+
+        if (basicSnapshot.hasChild('friends') == false) {
+            return []
+        }
+
+        const ref = basicRef.child("friends")
         if (ref.exists == false) {
             return []
         }
-        const snapshot = await ref.once('value')
+
+        const snapshot = await ref.once('child_added')
     
-        const friends = snapshot.val()
-        if (friends == undefined) {
+        var friends = snapshot.toJSON()
+        
+        if (friends == undefined || friends == null) {
             return []
         }
+
+        friends = Array(friends)
         //Extract friends' identifier
         const identifiers = friends.map(value => value.id)
         return identifiers
@@ -176,10 +193,10 @@ class Utils {
     static async cannotBeFriends(identifier) {
         var requests = await Utils.friendRequests(identifier)
         var friends = await Utils.friendsIdentifier(identifier)
-        if (requests == undefined) {
+        if (requests == undefined || requests == null) {
             requests = []
         }
-        if (friends == undefined) {
+        if (friends == undefined || friends == null) {
             friends = []
         }
         requests = requests.map(request => request.id)
@@ -210,9 +227,13 @@ class Utils {
         const ref = firebase.admin.database().ref().child("USER").child(userIdentifier).child('videolist')
         if (ref.exists == false) {
             return []
-        } 
+        }
+        var videos = []
         const snapshot = await ref.once('value')
-        return snapshot
+        snapshot.forEach(child => {
+            videos.push(child.toJSON())
+        })
+        return videos
     }
     
     static async friendVideos(userIdentifier) {
@@ -225,8 +246,63 @@ class Utils {
                 videos.push(video)
             })
         }
-    
         return videos
+    }
+
+    static async sharedVideoIdentifiers(userIdentifier) {
+
+        var finalValues = []
+
+        const friendIdentifiers = await Utils.friendsIdentifier(userIdentifier)
+
+        for (var index in friendIdentifiers) {
+
+
+            const userIdentifier = friendIdentifiers[index]
+
+            const ref = firebase.admin.database().ref().child("USER").child(userIdentifier).child('sharedvideos')
+            const snapshot = await ref.once('value')
+            
+            var values = snapshot.val()
+        
+            if (values == undefined || values == null) {
+                values = []
+                continue
+            }
+            finalValues.push(
+                ({
+                    videoOwner: values[0].videoOwner,
+                    videoNumber: values[0].vnum
+                })
+            )
+        
+        }
+        
+        return finalValues
+    }
+
+    static async sharedVideos(userIdentifier) {
+        var videos = []
+        const sharedVideoIdentifiers = await Utils.sharedVideoIdentifiers(userIdentifier)
+        
+        for (var index in sharedVideoIdentifiers) {
+            const id = sharedVideoIdentifiers[index]
+           
+            const newVideos = await Utils.loadSharedVideo(id.videoOwner, id.videoNumber)
+            videos.push(newVideos)
+        }
+        return videos
+    }
+
+    static async loadSharedVideo(ownerIdentifier, vnum) {
+        const ref = firebase.admin.database().ref().child("USER").child(ownerIdentifier).child('videolist').child(vnum)
+        if (ref.exists == false) {
+            return
+        }
+        
+        const snapshot = await ref.once('value')
+        return snapshot.toJSON()
+        
     }
 
     static async loadAdmiringIdentifier(userIdentifier) {
@@ -238,7 +314,7 @@ class Utils {
         const snapshot = await ref.once('value')
     
         const admirings = snapshot.val()
-        if (admirings == undefined) {
+        if (admirings == undefined || admirings == null) {
             return []
         }
         //Extract friends' identifier
@@ -262,8 +338,16 @@ class Utils {
     
     static async loadThumbnail(userIdentifier) {
         var videos = []
+        
+        const sharedVideos = await Utils.sharedVideos(userIdentifier)
+        
         const friendLoadedVideos = await Utils.friendVideos(userIdentifier)
+       
         const admiringVideos = await Utils.admiringVideos(userIdentifier)
+        
+        sharedVideos.forEach(video => {
+            videos.push(video)
+        })
         friendLoadedVideos.forEach(video => {
             videos.push(video)
         })
@@ -373,7 +457,7 @@ class Utils {
     
     }
 
-    static async usersFromName(name) {
+    static async usersFromName(name, identifier) {
         var users = []
         const ref = firebase.admin.database().ref('USER').orderByChild('name').startAt(name).endAt(name + '\uf8ff')
         
@@ -382,7 +466,10 @@ class Utils {
         snapshot.forEach(childSnapshot => {
             var user = childSnapshot.toJSON()
             user.id = childSnapshot.key
-            users.push(user)
+            if (user.id !== identifier) {
+                users.push(user)
+            }
+            
         })
         return users
     }
@@ -439,7 +526,7 @@ class Utils {
                 for (var element in videolist) {
                     const video = videolist[element]
                     const title = video.title.toLowerCase()
-                    if (title.startsWith(name)) {
+                    if (title.startsWith(name) && video.id !== currentUser) {
                         videos.push(video)
                     }
                 }
@@ -470,6 +557,7 @@ class Utils {
             'admirerscount': '0',
             'followerscount': '0',
             'name': name,
+            'username': name.split(' ').join('').toLowerCase(),
             'phonenumber': '',
             'photourl': photourl,
             'sharescount': '0',
@@ -510,6 +598,10 @@ class Utils {
         const countSnapshot = await sharesCountRef.once('value')
         const sharesCount = Number(countSnapshot.toJSON().shares)
         sharesCountRef.update({'shares': String(sharesCount + 1)})
+
+        const userRef = firebase.admin.database().ref('USER').child(userIdentifier).child('sharedvideos')
+        const userSnapshot = await userRef.once('value')
+        userRef.child(String(userSnapshot.numChildren())).set({'videoOwner': videoOwnerIdentifier, 'vnum': videoNumber})
     }
 
     static async replyToComment(userIdentifier, videoOwnerIdentifier, videoNumber, commentIdentifier, caption) {
@@ -629,13 +721,87 @@ class Utils {
         const snapshot = await ref.once('value')
         var comments = []
         snapshot.forEach(child => {
-            var comment = childSnapshot.toJSON()
+            var comment = child.toJSON()
             comment.commentID = child.key
 
             comments.push(comment)
         })
         return comments
     }
+static async updateImage(req) {
+
+    const BusBoy = require("busboy");
+    const path = require("path");
+    const os = require("os");
+    const fs = require("fs");
+
+    const busboy = new BusBoy({ headers: req.headers });
+
+    let imageToBeUploaded = {};
+    let imageFileName;
+  
+    let uid = req.user.uid;
+    let generatedToken = Math.random().toString(36).substring(7);
+
+
+    busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
+        console.log(fieldname, file, filename, encoding, mimetype);
+        if (mimetype !== "image/jpeg" && mimetype !== "image/png") {
+            return "Wrong file type submitted";
+        }
+    
+        const imageExtension = filename.split(".")[filename.split(".").length - 1];
+   
+        imageFileName = `${uid}.${imageExtension}`;
+        const filepath = path.join(os.tmpdir(), imageFileName);
+    
+        imageToBeUploaded = { filepath, mimetype };
+        file.pipe(fs.createWriteStream(filepath));
+    });
+    busboy.on("finish", () => {
+        firebase.admin
+        .storage()
+        .bucket()
+        .upload(imageToBeUploaded.filepath, {
+            resumable: false,
+            destination: 'profileImages/' + imageFileName,
+            metadata: {
+            metadata: {
+                contentType: imageToBeUploaded.mimetype,
+                firebaseStorageDownloadTokens: generatedToken,
+            },
+            },
+        })
+        .then(() => {
+            const imageUrl = `https://firebasestorage.googleapis.com/v0/b/theatronfinal.appspot.com/o/profileImages%2F${imageFileName}?alt=media&token=${generatedToken}`;
+
+            //Change url
+            firebase.admin.database().ref('USER').child(uid).update({'photourl': imageUrl})
+
+            return imageUrl
+        })
+        .catch((err) => {
+            return "something went wrong";
+        });
+    });
+    busboy.end(req.rawBody);
+
+}
+
+static async pendingVideo() {
+    const ref = firebase.admin.database().ref('PENDING_VIDEOS')
+    const snapshot = await ref.once('value')
+    var video = []
+    snapshot.forEach(child => {
+        var item = child.toJSON()
+        item.id = child.key
+        video.push(item)
+    })
+
+    return video
+}
+        
+    
 
 }
 
