@@ -22,7 +22,6 @@ router.post('/profile', auth ,  async (req,res)=>{
   //Getting the profile with the uid
     try{
       const user = req.user;
-      
       res.status(200).send(user);
       return user;
 
