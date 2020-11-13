@@ -589,7 +589,7 @@ class Utils {
                 for (var element in videolist) {
                     const video = videolist[element]
 
-                    if (video !== undefined && video.title != undefined) {
+                    if (video !== undefined && video.title != undefined && video.id !== currentUser) {
                         videos.push(video)
                     }
                 }
