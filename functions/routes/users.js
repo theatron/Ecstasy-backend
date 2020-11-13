@@ -19,6 +19,7 @@ const { runInContext } = require("vm");
 const { response } = require("express");
 const { sendNotification, postSilentNotification } = require('../middleware/notifications');
 const { compressAndUploadVideo,MRSUploadData } = require("../config/modules");
+const { parsePhoneNumber } = require('libphonenumber-js')
 
 
 //Routes
@@ -39,7 +40,15 @@ router.post('/login', auth, async(req, res) => {
     res.send('error')
   }
 
-  Utils.login(userID, type, name, photourl).then(() => res.send('success'))
+  const value = await Utils.login(userID, type, name, photourl)
+  console.log(value)
+
+  if (value == false) {
+    const newType = (type == 'artist') ? 'audience' : 'artist'
+    res.status(403).send(`Sorry, you are not able to login as ${type}. Please, switch to ${newType}`)
+  } else {
+    res.send('success')
+  }
 
 })
 
@@ -61,7 +70,7 @@ router.post('/profile', auth ,  async (req,res)=>{
   Utils.loadUser(user.uid).then(user => { res.send(user) })
 });
 
-router.post('/profile/edit', auth, (req, res) => {
+router.post('/profile/edit', auth, async (req, res) => {
   const headers = req.headers
   const name = headers.name
   const username = headers.username
@@ -71,20 +80,37 @@ router.post('/profile/edit', auth, (req, res) => {
   
   const ref = admin.database().ref().child("USER").child(req.user.uid)
   
-  if (name != undefined) {
+  if (name !== undefined) {
     ref.update({"name": name})
   }
-  if (username != undefined) {
+  if (username !== undefined) {
     ref.update({"username": username})
   }
-  if (biography != undefined) {
+  if (biography !== undefined) {
     ref.update({"bio": biography})
   }
-  if (number != undefined) {
-    ref.update({"phonenumber": number})
-  }
-  if (website != undefined) {
+  if (website !== undefined) {
     ref.update({"web": website})
+  }
+
+  if (number !== undefined) {
+    if (number !== '') {
+      const result = await Utils.userFromUniversalNumber(number, req.user.uid)
+    console.log(result)
+    if (result.length > 0) {
+      res.send('Sorry, this phonenumber is already in use')
+      return
+    }
+    try {
+      const newNumber = parsePhoneNumber(number).nationalNumber
+      ref.update({"phonenumber": newNumber})
+    } catch {
+      ref.update({"phonenumber": number})
+    }
+    } else {
+      ref.update({'phonenumber': ''})
+    }
+    
   }
 
   res.send('success')
@@ -141,17 +167,22 @@ router.post('/profile/delete-friend', auth, (req, res) => {
 });
 
 //Load friend requests
-router.post('/profile/friend-requests', auth, (req, res) => {
+router.post('/profile/friend-requests', auth, async (req, res) => {
   const user = req.user
   var ref = admin.database().ref().child("USER").child(user.uid).child("friendrns")
   if (req.headers.type == "S" || req.headers.type == "R") {
     ref = ref.orderByChild('type').equalTo(req.headers.type)
   }
-  ref.once('value')
-    .then(snapshot => {
-      const requests = snapshot.val()
-      res.send(requests)
-    })
+  const snapshot = await ref.once('value')
+  const requests = snapshot
+  var friends = []
+  requests.forEach(request => {
+    console.log(request.toJSON())
+    if (request.toJSON() !== null) {
+      friends.push(request)
+    }
+  })
+  res.send(friends)
 });
 
 //Send friend request
@@ -199,6 +230,27 @@ router.post('/profile/thumbnail', auth, (req, res) => {
     Utils.loadThumbnail(user.uid).then(videos => res.send(videos))
 
 });
+
+//Watch video(Add view)
+router.post('/profile/watch-video', auth, async (req, res) => {
+
+  const user = req.user
+  const videoOwner = req.headers.video_owner
+  const videoNumber = req.headers.video_number
+  
+  if (videoOwner == undefined || videoNumber == undefined) {
+    res.send('error')
+    return
+  }
+
+  const ref = admin.database().ref('USER').child(user.uid).child('videolist').child(videoNumber)
+  const snapshot = await ref.once('value')
+  const views = Number(snapshot.toJSON().view)
+
+  ref.update({'view': String(views + 1)})
+
+  res.send('success')
+})
 
 //Like video
 router.post('/profile/like-video', auth, (req, res) => {
@@ -345,6 +397,16 @@ router.post('/profile/videos-from-id', auth, (req, res) => {
   Utils.videosFromUser(req.user.uid).then(videos => res.send(videos))
 })
 
+router.post('/profile/videos-from-user', auth, (req, res) => {
+  const userIdentifier = req.headers.user_identifier
+  if (userIdentifier == undefined) {
+    res.send('error')
+    return
+  }
+
+  Utils.videosFromUser(userIdentifier).then(videos => res.send(videos))
+})
+
 //Share video with caption
 router.post('/profile/share-video', auth, (req, res) => {
   const caption = req.headers.caption
@@ -487,20 +549,23 @@ router.post('/profile/dislikes-comment', auth, (req, res) => {
 //Video Uploading route
 router.post('/profile/upload', auth , async (req,res)=>{
   
-  try{
-    const userName = await req.user.displayName;
-    const id = await req.user.uid;
-
-
+  try {
+    
+    var userName = req.user.displayName;
+    
+    const id = req.user.uid;
+    
+    if (userName == undefined) {
+      userName = ""
+    }
+    
     const Busboy = require('busboy');
     const busboy = new Busboy({headers: req.headers});
 
     var title,desc,url;
-    
-
 
     busboy.on('file', async (fieldname, file, filename) => {
-      url = await compressAndUploadVideo(file,userName,res);
+      url = await compressAndUploadVideo(file,res);
       console.log(url);
     });
     
@@ -524,45 +589,12 @@ router.post('/profile/upload', auth , async (req,res)=>{
     console.log('success');
 
 }catch(e){
-  console.log(e);
+  console.log('error updating video', e);
 }
  
 });
 
 
-//MRS
-router.post('/push/to/videos', auth ,async (req,res,next)=>{
-    try{  
-      const id = await req.user.uid;
-      var refer = admin.database().ref('PENDING_VIDEOS/'+id);
-    
-
-      await refer.once('value').then((snapshot)=> {
-        var data = snapshot.val();
-        data.status = 'approved';
-        var newRef = admin.database().ref('USER').child(id).child('videolist')
-        newRef.once('value').then(newSnapshot => {
-          newRef.child(String(newSnapshot.numChildren())).set(data)
-        })
-        
-      });
-
-      refer.remove();
-      
-      console.log('pushed to videos');
-    }catch(e){
-      console.log(e);
-    }
-});
-
-router.post('/mrs/pending-video', (req, res) => {
-  if (req.headers.token !== '858484') {
-    res.send('error')
-    return
-  }
-
-  Utils.pendingVideo().then(video => res.send(video))
-})
 const multer = require('multer');
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -594,43 +626,58 @@ router.post('/profile/picture', auth, async (req, res, next) => {
 
 
 //MRS
-router.post('/push/to/videos', auth ,async (req,res,next)=>{
-    try{  
-      const id = req.user.uid;
-      var refer = admin.database().ref('PENDING_VIDEOS/'+id);
-    
+router.post('/push/to/videos', auth, async (req,res) => {
+    const id = req.user.uid;
+    var refer = admin.database().ref('PENDING_VIDEOS/'+id);
+  
+    await refer.once('value').then((snapshot)=> {
+      var data = snapshot.val();
+      data.status = 'approved';
+      const newRef = admin.database().ref('USER').child(id).child('videolist')
+      newRef.once('value').then(newSnapshot => {
+        newRef.child(String(newSnapshot.numChildren())).set(data);
+      })
 
-      await refer.once('value').then((snapshot)=> {
-        var data = snapshot.val();
-        data.status = 'approved';
-        admin.database().ref('Videos/'+id).set(data);
-        
-      });
+      
+      
+    });
 
-      refer.remove();
-      console.log('title:', data, data.title)
-      res.status(200).send('pushed to videos');
-    }catch(e){
-      res.status(400).send(e);
-    }
+    refer.remove();
+    postSilentNotification(id, 'Video', 'Your video has been approved')
+    sendNotification('Video', 'Your video has been approved', id)
+    res.send('success')
 });
 
-router.post('/deny-video', auth, async (req, res) => {
+router.post('/profile/all-video', auth, async(req, res) => {
+  const video = await Utils.videos(req.user.uid)
+  res.send(video)
+})
+
+router.post('/mrs/deny-video', auth, async (req, res) => {
   const id = req.user.uid
-  const refer = admin.database().ref('PENDING_VIDEOS/').child(id)
+  const refer = admin.database().ref('PENDING_VIDEOS').child(id)
   const snapshot = await refer.once('value')
   refer.remove()
-
+  postSilentNotification(id, 'Video', 'Your video has not been approved')
   res.send('success')
 })
 
-router.post('/pending-video', auth, async (req, res) => {
-  const id = req.user.uid
-  const refer = admin.database().ref('PENDING_VIDEOS/').child(id)
-  const snapshot = await refer.once('value')
-  res.send(snapshot.toJSON())
+// router.post('/mrs/pending-video', async (req, res) => {
+//   const id = req.user.uid
+//   const refer = admin.database().ref('PENDING_VIDEOS').child(id)
+//   const snapshot = await refer.once('value')
+//   res.send(snapshot.toJSON())
+// })
+
+router.post('/mrs/pending-video', (req, res) => {
+  if (req.headers.token !== '858484') {
+    res.send('error')
+    return
+  }
+
+  Utils.pendingVideo().then(video => res.send(video))
 })
 
   
 //Exports
-module.exports= router;
+module.exports = router;

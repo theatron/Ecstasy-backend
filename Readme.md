@@ -106,10 +106,18 @@ Remove user admire
 #### Header:
 - user: `user's identifier`
 
+## /profile/all-video
+Load all video available
+
 ## /profile/videos-from-name
 Search videos by title
 #### Header:
 - text: `video's title query`
+
+## /profile/videos-from-user
+Search videos by title
+#### Header:
+- user_identifier: `user's identifier`
 
 ## /profile/login
 Login or create new user
@@ -132,6 +140,12 @@ Share video with caption
 - video_number: `video number`
 - comment_identifier: `comment_identifier`
 - caption: `caption` (maximum 140 characters)
+
+## /profile/watch-video
+Watch video(add one view)
+#### Header:
+- video_owner: `video owner identifier`
+- video_number: `video number`
 
 ## /profile/like-comment
 Like comment

@@ -45,10 +45,17 @@ app1.use(cookieParser());
 //Body Parser
 
 // parse application/x-www-form-urlencoded
-app1.use(bodyParser.urlencoded({ extended: false, limit: '50MB' }));
- 
+app1.use(bodyParser.json({
+  limit: '50mb'
+}));
+
+app1.use(bodyParser.urlencoded({
+  limit: '50mb',
+  parameterLimit: 100000,
+  extended: true 
+}));
 // parse application/json
-app1.use(bodyParser.json());
+//app1.use(bodyParser.json());
 
 
 //Routes setup

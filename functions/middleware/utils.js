@@ -4,6 +4,7 @@ const firebase = require('./firebaseFunc.js');
 const { sendNotification, postSilentNotification } = require('./notifications');
 const admin = require('firebase-admin');
 var bucket = admin.storage().bucket();
+const { parsePhoneNumber } = require('libphonenumber-js')
 //const storage = require('firebase/storage'); 
 //var storage = require('@google-cloud/storage')
 
@@ -69,10 +70,12 @@ class Utils {
 
         //sendNotification('Friend request', 'You got a new friend request from ' + user.name, friendIdentifier, user.photourl)
         postSilentNotification(friendIdentifier, 'Friend request', 'You got a new friend request from ' + user.name)
+        sendNotification('Friend request', 'You got a new friend request from ' + user.name, friendIdentifier)
 
         return friend
     }
     
+
     static async acceptFriendRequest(userIdentifier, friendIdentifier) {
         const userBasic = firebase.admin.database().ref().child("USER").child(userIdentifier)
         const user = userBasic.child("friendrns")
@@ -120,6 +123,7 @@ class Utils {
         })
     }
     
+
     static async usersFromNumber(identifiers, number) {
         const ref = firebase.admin.database().ref().child('USER').orderByChild('phonenumber').equalTo(number)
     
@@ -136,14 +140,47 @@ class Utils {
         
         return newUsers
     }
-    
+
+    static async userFromUniversalNumber(number, identifier) {
+        var users = []
+        const defaultUsers = await Utils.usersFromNumber([identifier], number)
+        defaultUsers.forEach(user => users.push(user))
+        
+        try {
+            const nationalNumber = parsePhoneNumber(number).nationalNumber
+            if (nationalNumber !== undefined) {
+                var nationalFriends = await Utils.usersFromNumber([identifier], nationalNumber)
+                nationalFriends.forEach(user => users.push(user))
+            }
+        } catch {
+            console.log('error', users)
+            return users
+        }
+
+        return users
+    }
+
     static async usersFromNumbers(identifiers, numbers) {
         var users = []
         for (var number in numbers) {
-            const friends = await Utils.usersFromNumber(identifiers, numbers[number])
-            friends.forEach(friend => {
-                
-            })
+            const simpleNumber = numbers[number]
+            
+            var friends = await Utils.usersFromNumber(identifiers, simpleNumber)
+            try {
+                const nationalNumber =  parsePhoneNumber(simpleNumber).nationalNumber
+                if (nationalNumber !== undefined) {
+                    var nationalFriends = await Utils.usersFromNumber(identifiers, nationalNumber)
+                    nationalFriends.forEach(friend => {
+                        if (friends.includes(friend) == false) {
+                            friends.push(friend)
+                        }   
+                    })
+                }
+            } catch {
+                console.log('error')
+            }
+            
+            
             if (friends.toJSON !== null) {
                 friends.forEach(friend => { users.push(friend) })
             }
@@ -341,16 +378,16 @@ class Utils {
         
         const sharedVideos = await Utils.sharedVideos(userIdentifier)
         
-        const friendLoadedVideos = await Utils.friendVideos(userIdentifier)
+        //const friendLoadedVideos = await Utils.friendVideos(userIdentifier)
        
         const admiringVideos = await Utils.admiringVideos(userIdentifier)
         
         sharedVideos.forEach(video => {
             videos.push(video)
         })
-        friendLoadedVideos.forEach(video => {
-            videos.push(video)
-        })
+        // friendLoadedVideos.forEach(video => {
+        //     videos.push(video)
+        // })
 
         admiringVideos.forEach(video => {
             videos.push(video)
@@ -429,7 +466,7 @@ class Utils {
         const snapshot = await ref.once('value')
         const values = snapshot.toJSON()
     
-        for (childSnapshot in values) {
+        for (var childSnapshot in values) {
             
             if (values[childSnapshot].id) {
                 return true
@@ -447,7 +484,7 @@ class Utils {
         const snapshot = await ref.once('value')
         const values = snapshot.toJSON()
     
-        for (childSnapshot in values) {
+        for (var childSnapshot in values) {
             
             if (values[childSnapshot].id) {
                 return true
@@ -525,9 +562,12 @@ class Utils {
             if (videolist != undefined) {
                 for (var element in videolist) {
                     const video = videolist[element]
-                    const title = video.title.toLowerCase()
-                    if (title.startsWith(name) && video.id !== currentUser) {
-                        videos.push(video)
+
+                    if (video !== undefined && video.title != undefined) {
+                        const title = video.title.toLowerCase()
+                        if (title.startsWith(name) && video.id !== currentUser) {
+                            videos.push(video)
+                        }   
                     }
                 }
                 
@@ -540,11 +580,33 @@ class Utils {
         return videos
     }
 
+    static async videos(currentUser) {
+        var videos = []
+        const snapshot = await firebase.admin.database().ref('USER').once('value')
+        snapshot.forEach(snapshot => {
+            const videolist = snapshot.toJSON().videolist
+            if (videolist != undefined) {
+                for (var element in videolist) {
+                    const video = videolist[element]
+
+                    if (video !== undefined && video.title != undefined) {
+                        videos.push(video)
+                    }
+                }
+                
+            }
+            
+        })
+        
+    
+        return videos
+    }
+
     static async login(id, type, name, photourl) {
         const ref = firebase.admin.database().ref('USER').child(id)
         const snapshot = await ref.once('value')
         if (snapshot.exists() && snapshot.hasChildren()) {
-            Utils.updateUser(id, type)
+            return await Utils.updateUser(id, type)
         } else {
             Utils.createUser(id, type, name, photourl)
         }
@@ -577,7 +639,9 @@ class Utils {
 
     static async updateUser(id, type) {
         const ref = firebase.admin.database().ref('USER').child(id)
-        ref.update({'type': type})
+        const snapshot = await ref.once('value')
+        const object = snapshot.toJSON()
+        return (object.type == type)
     }
 
     static async shareVideo(userIdentifier, videoOwnerIdentifier, videoNumber, caption, commentIdentifier) {
