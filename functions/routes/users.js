@@ -243,8 +243,14 @@ router.post('/profile/watch-video', auth, async (req, res) => {
     return
   }
 
-  const ref = admin.database().ref('USER').child(user.uid).child('videolist').child(videoNumber)
+  const ref = admin.database().ref('USER').child(videoOwner).child('videolist').child(videoNumber)
   const snapshot = await ref.once('value')
+  
+  if (snapshot == null) {
+    res.send('Something went wrong')
+    return
+  }
+
   const views = Number(snapshot.toJSON().view)
 
   ref.update({'view': String(views + 1)})
