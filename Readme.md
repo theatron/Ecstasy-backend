@@ -119,7 +119,7 @@ Search videos by title
 #### Header:
 - user_identifier: `user's identifier`
 
-## /profile/login
+## /login
 Login or create new user
 #### Header:
 - name: `user's name`

@@ -11,15 +11,45 @@ const { parsePhoneNumber } = require('libphonenumber-js')
 const { Storage } = require('@google-cloud/storage');
 
 class Utils {
+
+    static async loadSmallUser(identifier) {
+        const database = firebase.admin.database()
+        const ref = database.ref().child("SMALL-USER").child(identifier)
+        
+        var user = await ref.once('value', snapshot => { return snapshot.val() })
+        user = user.toJSON()
+        if (user !== null) {
+            user.id = ref.key
+            return user
+        }
+    }
+
     static async loadUser(identifier) {
         const database = firebase.admin.database()
         const ref = database.ref().child("USER").child(identifier)
         
         var user = await ref.once('value', snapshot => { return snapshot.val() })
         user = user.toJSON()
+        if (user !== null) {
+            user.id = ref.key
+            return user
+        }
        
-        user.id = ref.key
-        return user
+        
+    }
+
+    static async loadSmallUsers(identifiers) {
+        var users = []
+        
+        for (var index in identifiers) {
+            const user = await Utils.loadSmallUser(identifiers[index])
+            if (user !== undefined) {
+                users.push(user)
+            }
+            
+        }
+    
+        return users
     }
     
     static async loadUsers(identifiers) {
@@ -27,7 +57,10 @@ class Utils {
         
         for (var index in identifiers) {
             const user = await Utils.loadUser(identifiers[index])
-            users.push(user)
+            if (user !== undefined) {
+                users.push(user)
+            }
+            
         }
     
         return users
@@ -44,7 +77,7 @@ class Utils {
             const body = {
                 'id': friendIdentifier,
                 'name': friend.name,
-                'phonenumber': friend.phonenumber,
+                //'phonenumber': friend.phonenumber,
                 'photo': friend.photourl,
                 'type': 'S'
             }
@@ -59,7 +92,7 @@ class Utils {
             const body = {
                 'id': userIdentifier,
                 'name': user.name,
-                'phonenumber': user.phonenumber,
+                //'phonenumber': user.phonenumber,
                 'photo': user.photourl,
                 'type': 'R'
             }
@@ -635,6 +668,13 @@ class Utils {
             'phonenumber': '',
             'photo': photourl
           })
+          const smallRef = firebase.admin.database().ref('SMALL-USER')
+          smallRef.child(id).set({
+            'name': name,
+            'photourl': photourl,
+            'username': name.split(' ').join('').toLowerCase()
+          })
+          
     }
 
     static async updateUser(id, type) {
@@ -841,6 +881,9 @@ static async updateImage(req) {
 
             //Change url
             firebase.admin.database().ref('USER').child(uid).update({'photourl': imageUrl})
+
+            const smallUser = firebase.admin.database().ref().child("SMALL-USER").child(req.user.uid)
+            smallUser.update({'photourl': imageUrl})
 
             return imageUrl
         })

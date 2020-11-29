@@ -113,6 +113,9 @@ router.post('/profile/edit', auth, async (req, res) => {
     
   }
 
+  const smallUser = admin.database().ref().child("SMALL-USER").child(req.user.uid)
+  smallUser.update({'name': name, 'username': username})
+
   res.send('success')
 });
 
@@ -149,7 +152,7 @@ router.post('/profile/friends', auth, (req, res) => {
       //Extract friends' identifier
       const identifiers = friends.map(value => value.id)
       //Load updated users by identifier
-      Utils.loadUsers(identifiers).then(users => { res.send(users) })
+      Utils.loadSmallUsers(identifiers).then(users => { res.send(users) })
     })
 });
 
@@ -177,9 +180,9 @@ router.post('/profile/friend-requests', auth, async (req, res) => {
   const requests = snapshot
   var friends = []
   requests.forEach(request => {
-    console.log(request.toJSON())
-    if (request.toJSON() !== null) {
-      friends.push(request)
+    
+    if (request.toJSON() !== null && friends.some(item => item.id == request.toJSON().id && request.toJSON().type == item.type) == false) {
+      friends.push(request.toJSON())
     }
   })
   res.send(friends)
