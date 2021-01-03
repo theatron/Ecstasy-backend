@@ -101,7 +101,6 @@ class Utils {
             newRef.set(body)
         })
 
-        //sendNotification('Friend request', 'You got a new friend request from ' + user.name, friendIdentifier, user.photourl)
         postSilentNotification(friendIdentifier, 'Friend request', 'You got a new friend request from ' + user.name)
         sendNotification('Friend request', 'You got a new friend request from ' + user.name, friendIdentifier)
 
@@ -140,6 +139,7 @@ class Utils {
 
         const loadedUser = await Utils.loadUser(userIdentifier)
         postSilentNotification(friendIdentifier, 'New friend', loadedUser.name + ' has accepted your request')
+        sendNotification('New friend', loadedUser.name + ' has accepted your request', friendIdentifier)
     }
     
     static async denyFriendRequest(userIdentifier, friendIdentifier) {
@@ -159,7 +159,7 @@ class Utils {
 
     static async usersFromNumber(identifiers, number) {
         const ref = firebase.admin.database().ref().child('USER').orderByChild('phonenumber').equalTo(number)
-    
+        //const ref = firebase.admin.database().ref().child('ALLUSER').orderByChild('phonenumber').equalTo(number)
         const snapshot = await ref.once('value')
         var newUsers = []
         snapshot.forEach(childSnapshot => {
@@ -176,14 +176,17 @@ class Utils {
 
     static async userFromUniversalNumber(number, identifier) {
         var users = []
-        const defaultUsers = await Utils.usersFromNumber([identifier], number)
-        defaultUsers.forEach(user => users.push(user))
+        // const defaultUsers = await Utils.usersFromNumber([identifier], number)
+        // defaultUsers.forEach(user => users.push(user))
         
         try {
             const nationalNumber = parsePhoneNumber(number).nationalNumber
             if (nationalNumber !== undefined) {
                 var nationalFriends = await Utils.usersFromNumber([identifier], nationalNumber)
                 nationalFriends.forEach(user => users.push(user))
+            } else {
+                const defaultUsers = await Utils.usersFromNumber([identifier], number)
+        defaultUsers.forEach(user => users.push(user))
             }
         } catch {
             console.log('error', users)
@@ -717,6 +720,7 @@ class Utils {
 
         const comment = await firebase.admin.database().ref('USER').child(videoOwnerIdentifier).child('comments').child(videoNumber).child(commentIdentifier).once('value')
         postSilentNotification(comment.toJSON().id, 'New reply', comment.toJSON().comments)
+        sendNotification('New reply', comment.toJSON().comments, comment.toJSON().id)
     }
 
     static async likeComment(userIdentifier, videoOwner, videoNumber, commentIdentifier) {
@@ -736,6 +740,7 @@ class Utils {
         const uid = snapshot.toJSON().id
         const comments = snapshot.toJSON().comments
         postSilentNotification(uid, 'Captions like', comments)
+        sendNotification('Captions like', comments, uid)
     }
     
     static async deleteCommentLike(userIdentifier, videoOwner, videoNumber, commentIdentifier) {
@@ -752,7 +757,23 @@ class Utils {
         }
         ref.update({"likes": String(likes - 1)})
     }
-    
+    //Delete video
+    static async deleteVideo(videoOwner, videoNumber) {
+        const ref = firebase.admin.database().ref('USER').child(videoOwner).child('videolist').child(videoNumber)
+        const snapshot = await ref.once('value')
+        const storageRef = snapshot.toJSON().url
+
+        const withoutFirstPart = storageRef.slice(81)//82
+        const identifier = withoutFirstPart.substring(0, 37) + 'mp4'
+       
+        const storageItem = firebase.admin.storage().bucket().file('videos/' + identifier)
+       
+        await storageItem.delete()
+        console.log('deleted')
+        ref.remove()
+        console.log('deleted')
+    }
+
     static async dislikeComment(userIdentifier, videoOwner, videoNumber, commentIdentifier) {
         
         const ref = firebase.admin.database().ref('USER').child(videoOwner).child('comments').child(videoNumber).child(commentIdentifier)
@@ -876,7 +897,7 @@ static async updateImage(req) {
             },
             },
         })
-        .then(() => {
+        .then(async () => {
             const imageUrl = `https://firebasestorage.googleapis.com/v0/b/theatronfinal.appspot.com/o/profileImages%2F${imageFileName}?alt=media&token=${generatedToken}`;
 
             //Change url
@@ -884,6 +905,12 @@ static async updateImage(req) {
 
             const smallUser = firebase.admin.database().ref().child("SMALL-USER").child(req.user.uid)
             smallUser.update({'photourl': imageUrl})
+            console.log(req.user.uid)
+            const generalQuery = firebase.admin.database().ref().child('ALLUSER').orderByChild('id').equalTo(req.user.uid)
+            const key = (await generalQuery.once('child_added')).key
+  
+            const generalRef = admin.database().ref().child('ALLUSER').child(key)
+            generalRef.update({'photo': imageUrl})
 
             return imageUrl
         })
@@ -900,9 +927,15 @@ static async pendingVideo() {
     const snapshot = await ref.once('value')
     var video = []
     snapshot.forEach(child => {
-        var item = child.toJSON()
-        item.id = child.key
-        video.push(item)
+        var item = child
+
+        child.forEach(snap => {
+            const value = snap.toJSON()
+            value.vid = snap.key
+            value.complexVid = child.key + "-" + snap.key
+            video.push(value)
+        })
+        
     })
 
     return video

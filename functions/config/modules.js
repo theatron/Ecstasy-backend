@@ -7,6 +7,7 @@ const functions = require('firebase-functions');
 
 //uploading video and saving it to the database 
 const compressAndUploadVideo = async (file,res) => {
+  console.log('upload video')
     var metadata = {
       contentType: 'video/mp4',
     }
@@ -55,9 +56,10 @@ const compressAndUploadVideo = async (file,res) => {
 
   }
 
-  const MRSUploadData = async (url,id,userName,title,desc)=>{
+  const MRSUploadData = async (url,id,userName,title,desc) => {
+    let random = Math.random().toString(36).substring(8);
     const snasphot = await admin.database().ref('USER').child(id).child("videolist").once('value')
-    await admin.database().ref('PENDING_VIDEOS/'+id).set({
+    await admin.database().ref('PENDING_VIDEOS').child(id).child(random).set({
       title:title,
       desc:desc,
       dislikes: "0",

@@ -55,6 +55,11 @@ Delete friend.
 ## /profile/thumbnail
 Load thumbnail videos
 
+## /profile/delete-video
+Delete video
+#### Header:
+- video_number: `video number`
+
 ## /profile/like-video
 Add like to video
 #### Header:

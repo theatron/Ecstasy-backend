@@ -9,7 +9,9 @@ const formData = require("express-form-data");
 
 const morgan = require('morgan');
 const _ = require('lodash');
+
 const os = require('os')
+
 
 
 //    *******************
@@ -35,7 +37,7 @@ const options = {
 app1.use(cors({ origin: true }))
 
 //express parsing json
-app1.use(express.json())
+//app1.use(express.json())
 
 app1.use(morgan('dev'));
 
@@ -45,15 +47,19 @@ app1.use(cookieParser());
 //Body Parser
 
 // parse application/x-www-form-urlencoded
-app1.use(bodyParser.json({
-  limit: '50mb'
-}));
+// app1.use(bodyParser.json({
+//   limit: '50mb'
+// }));
 
-app1.use(bodyParser.urlencoded({
-  limit: '50mb',
-  parameterLimit: 100000,
-  extended: true 
-}));
+// app1.use(bodyParser.urlencoded({
+//   limit: '50mb',
+//   parameterLimit: 100000,
+//   extended: true 
+// }));
+
+
+app1.use(bodyParser.json({limit: '10mb', extended: true}))
+app1.use(bodyParser.urlencoded({limit: '10mb', extended: true}))
 // parse application/json
 //app1.use(bodyParser.json());
 

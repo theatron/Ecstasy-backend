@@ -79,9 +79,14 @@ router.post('/profile/edit', auth, async (req, res) => {
   const website = headers.web
   
   const ref = admin.database().ref().child("USER").child(req.user.uid)
+  const generalQuery = admin.database().ref().child('ALLUSER').orderByChild('id').equalTo(req.user.uid)
+  const key = (await generalQuery.once('child_added')).key
   
+  const generalRef = admin.database().ref().child('ALLUSER').child(key)
+
   if (name !== undefined) {
     ref.update({"name": name})
+    generalRef.update({"name": name})
   }
   if (username !== undefined) {
     ref.update({"username": username})
@@ -104,20 +109,43 @@ router.post('/profile/edit', auth, async (req, res) => {
     try {
       const newNumber = parsePhoneNumber(number).nationalNumber
       ref.update({"phonenumber": newNumber})
+      generalRef.update({"phonenumber": newNumber})
     } catch {
       ref.update({"phonenumber": number})
+      generalRef.update({"phonenumber": number})
     }
     } else {
       ref.update({'phonenumber': ''})
+      generalRef.update({'phonenumber': ''})
     }
     
   }
 
   const smallUser = admin.database().ref().child("SMALL-USER").child(req.user.uid)
-  smallUser.update({'name': name, 'username': username})
+  if (name !== undefined) {
+    smallUser.update({'name': name})
+  }
+  if (username !== undefined) {
+    smallUser.update({'username': username})
+  }
 
   res.send('success')
 });
+
+router.post('/test', async(req, res) => {
+  setTimeout(async function() {
+    res.write('Test 1')
+  }, 1000);
+  setTimeout(async function() {
+    res.write('Test 2')
+  }, 2000);
+
+  setTimeout(async function() {
+    res.write('Test 3')
+
+    res.end()
+  }, 3000);
+})
 
 //Load possible friends from number
 router.post('/profile/can-be-friends', auth, (req, res) => {
@@ -234,6 +262,17 @@ router.post('/profile/thumbnail', auth, (req, res) => {
 
 });
 
+
+router.post('/profile/delete-video', auth, (req, res)  => {
+  const videoNumber = req.headers.video_number
+
+  if (videoNumber == undefined) {
+    res.send('error')
+    return
+  }
+
+  Utils.deleteVideo(req.user.uid, videoNumber).then(() => res.send('success'))
+})
 //Watch video(Add view)
 router.post('/profile/watch-video', auth, async (req, res) => {
 
@@ -557,9 +596,9 @@ router.post('/profile/dislikes-comment', auth, (req, res) => {
 
 //Video Uploading route
 router.post('/profile/upload', auth , async (req,res)=>{
-  
+  console.log('upload')
   try {
-    
+    console.log('inside try')
     var userName = req.user.displayName;
     
     const id = req.user.uid;
@@ -570,7 +609,7 @@ router.post('/profile/upload', auth , async (req,res)=>{
     
     const Busboy = require('busboy');
     const busboy = new Busboy({headers: req.headers});
-
+    console.log('after busboy')
     var title,desc,url;
 
     busboy.on('file', async (fieldname, file, filename) => {
@@ -637,14 +676,19 @@ router.post('/profile/picture', auth, async (req, res, next) => {
 //MRS
 router.post('/push/to/videos', auth, async (req,res) => {
     const id = req.user.uid;
-    var refer = admin.database().ref('PENDING_VIDEOS/'+id);
+    const newIdentifier = req.headers.newidentifier
+    
+    var refer = admin.database().ref('PENDING_VIDEOS').child(id).child(newIdentifier);
   
     await refer.once('value').then((snapshot)=> {
       var data = snapshot.val();
       data.status = 'approved';
       const newRef = admin.database().ref('USER').child(id).child('videolist')
       newRef.once('value').then(newSnapshot => {
-        newRef.child(String(newSnapshot.numChildren())).set(data);
+        const numChildren = String(newSnapshot.numChildren())
+        const ref = newRef.child(numChildren)
+        ref.set(data);
+        ref.update({'vnum': numChildren})
       })
 
       
@@ -664,10 +708,12 @@ router.post('/profile/all-video', auth, async(req, res) => {
 
 router.post('/mrs/deny-video', auth, async (req, res) => {
   const id = req.user.uid
-  const refer = admin.database().ref('PENDING_VIDEOS').child(id)
-  const snapshot = await refer.once('value')
+  const newIdentifier = req.headers.newidentifier
+  const refer = admin.database().ref('PENDING_VIDEOS').child(id).child(newIdentifier)
+  //const snapshot = await refer.once('value')
   refer.remove()
   postSilentNotification(id, 'Video', 'Your video has not been approved')
+  sendNotification('Video', 'Your video has not been approved', id)
   res.send('success')
 })
 

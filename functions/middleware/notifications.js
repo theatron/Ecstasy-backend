@@ -38,7 +38,10 @@ function postSilentNotification(userID, title, body) {
     "apns-priority":5,
     "data": {
       "title": title,
-      "body": body
+      "body": body,
+      "aps" : {
+        "content-available" : 1
+    },
     }});
   
   req.write(postData);
