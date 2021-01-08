@@ -52,8 +52,8 @@ Delete friend.
 #### Header:
 - friend: `friendIdentifier`
 
-## /profile/thumbnail
-Load thumbnail videos
+## /profile/timeline
+Load timeline composed of videos from artist and friends who shared them
 
 ## /profile/delete-video
 Delete video

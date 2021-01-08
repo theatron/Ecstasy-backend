@@ -262,6 +262,13 @@ router.post('/profile/thumbnail', auth, (req, res) => {
 
 });
 
+router.post('/profile/timeline', auth, (req, res) => {
+
+  const user = req.user
+  Utils.loadThumbnail(user.uid).then(videos => res.send(videos))
+
+});
+
 
 router.post('/profile/delete-video', auth, (req, res)  => {
   const videoNumber = req.headers.video_number
